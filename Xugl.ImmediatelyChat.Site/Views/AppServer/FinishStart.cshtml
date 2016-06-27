@@ -1,0 +1,43 @@
+﻿@{
+    ViewBag.Title = "FinishStart";
+}
+@model Xugl.ImmediatelyChat.Site.Models.ServersModel
+<h2>MMSs</h2>
+<table>
+    <tr><th>ip</th><th>port</th><th>Arrange Char</th></tr>
+@foreach (var m in Model.MMSServers)
+{
+    <tr>
+        <td>@m.MMS_IP</td>
+        <td>@m.MMS_Port</td>
+        <td>@m.ArrangeStr</td>
+    </tr>
+}
+</table>
+<br />
+<h2>MCSs</h2>
+<table>
+    <tr><th>ip</th><th>port</th><th>Arrange Char</th></tr>
+    @foreach (var m in Model.MCSServers)
+    {
+        <tr>
+            <td>@m.MCS_IP</td>
+            <td>@m.MCS_Port</td>
+            <td>@m.ArrangeStr</td>
+        </tr>
+    }
+</table>
+<br />
+<h2>MDSs</h2>
+<table>
+    <tr><th>ip</th><th>port</th><th>Arrange Char</th></tr>
+    @foreach (var m in Model.MDSServers)
+    {
+        <tr>
+            <td>@m.MDS_IP</td>
+            <td>@m.MDS_Port</td>
+            <td>@m.ArrangeStr</td>
+        </tr>
+    }
+</table>
+

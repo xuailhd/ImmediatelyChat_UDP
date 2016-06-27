@@ -1,0 +1,29 @@
+﻿
+@model Xugl.ImmediatelyChat.Model.Warehouse
+
+
+<div class="section-action">
+    <div class="btn-toolbar">
+        <div class="btn-group">
+            <a href="@Url.Action("Index")" class="btn" title="返回" rel="tooltip" data-placement="bottom"><i class="glyphicon glyphicon-share-alt"></i> 返回</a>
+        </div>
+    </div>
+</div>
+
+<div class="form-horizontal">
+    <div class="page-header">
+        <h3>仓库信息</h3>
+    </div>
+    <div class="form-group">
+        @Html.LabelFor(mode => mode.WarehouseCode, new { @class = "control-label col-md-2" })
+        <div class="col-md-4">
+            @Html.TextBoxFor(model => model.WarehouseCode, new { @class = "form-control" })
+            @Html.ValidationMessageFor(model=>model.WarehouseCode)
+        </div>
+        @Html.LabelFor(mode => mode.WarehouseName, new { @class = "control-label col-md-2" })
+        <div class="col-md-4">
+            @Html.TextBoxFor(model => model.WarehouseName, new { @class = "form-control" })
+            @Html.ValidationMessageFor(model => model.WarehouseName)
+        </div>
+    </div>
+</div>
