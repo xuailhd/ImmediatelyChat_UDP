@@ -20,7 +20,7 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
     public class BufferContorl
     {
 
-        private AsyncSocketClient asyncSocketClient;
+        //private AsyncSocketClientUDP asyncSocketClient;
         private readonly IContactPersonService contactPersonService;
 
         private int _maxSize = 1024;

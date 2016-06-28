@@ -42,13 +42,13 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
         private const int _maxSize = 1024;
         private const int _maxSendConnections = 10;
 
-        private AsyncSocketClient asyncSocketClient;
+        private AsyncSocketClientUDP asyncSocketClient;
 
         public BufferContorl()
         {
             msgRecordService = ObjectContainerFactory.CurrentContainer.Resolver<IMsgRecordService>();
             maxBufferRecordCount = 1000;
-            asyncSocketClient = new AsyncSocketClient(_maxSize, _maxSendConnections, CommonVariables.LogTool);
+            asyncSocketClient = new AsyncSocketClientUDP(_maxSize, _maxSendConnections, CommonVariables.LogTool);
         }
 
         public void SendMsgToMCS(MCSServer mcsServer,MsgRecord msgRecord)

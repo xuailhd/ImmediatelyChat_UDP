@@ -187,7 +187,6 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
 
         public void BeginService()
         {
-            CommonVariables.MessageContorl.StartMainThread();
             base.BeginService(CommonVariables.MDSIP,CommonVariables.MDSPort);
         }
     }

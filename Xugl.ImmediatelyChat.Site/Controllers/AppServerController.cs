@@ -155,7 +155,7 @@ namespace Xugl.ImmediatelyChat.Site.Controllers
                 ViewData["error"] = returnstr;
                 return View("StartFailed");
             }
-            returnstr = SendStartCommand();
+            returnstr = SendStartCommandUDP();
             if(!string.IsNullOrEmpty(returnstr))
             {
                 ViewData["error"] = returnstr;
@@ -238,53 +238,48 @@ namespace Xugl.ImmediatelyChat.Site.Controllers
             }
         }
 
-        //private string SendStartCommandUDP()
-        //{
-        //    string tempStr = "";
-        //    SyncSocketClientUDP syncSocketClientUDP = new SyncSocketClientUDP();
-        //    try
-        //    {
-        //        IList<MMSServer> mmsServers = cacheManage.GetCache<IList<MMSServer>>("MMSServers");
-        //        appServerService.Clean();
-        //        if (appServerService.BatchInsert(mmsServers) > 0)
-        //        {
-        //            if (Singleton<JavaScriptSerializer>.Instance == null)
-        //            {
-        //                Singleton<JavaScriptSerializer>.Instance = new JavaScriptSerializer();
-        //            }
-        //            tempStr = Singleton<JavaScriptSerializer>.Instance.Serialize(cacheManage.GetCache<IList<MCSServer>>("MCSServers"));
+        private string SendStartCommandUDP()
+        {
+            string tempStr = "";
+            try
+            {
+                IList<MMSServer> mmsServers = cacheManage.GetCache<IList<MMSServer>>("MMSServers");
+                appServerService.Clean();
+                if (appServerService.BatchInsert(mmsServers) > 0)
+                {
+                    tempStr = CommonVariables.javaScriptSerializer.Serialize(cacheManage.GetCache<IList<MCSServer>>("MCSServers"));
 
-        //            for (int i = 0; i < cacheManage.GetCache<IList<MMSServer>>("MMSServers").Count; i++)
-        //            {
-        //                syncSocketClientUDP.SendMsg(cacheManage.GetCache<IList<MMSServer>>("MMSServers")[i].MMS_IP,cacheManage.GetCache<IList<MMSServer>>("MMSServers")[i].MMS_Port,
-        //                    CommonFlag.F_PSCallMMSStart + tempStr);
-        //            }
+                    for (int i = 0; i < cacheManage.GetCache<IList<MMSServer>>("MMSServers").Count; i++)
+                    {
+                        CommonVariables.syncSocketClient.SendMsg(cacheManage.GetCache<IList<MMSServer>>("MMSServers")[i].MMS_IP, cacheManage.GetCache<IList<MMSServer>>("MMSServers")[i].MMS_Port,
+                            CommonFlag.F_PSCallMMSStart + tempStr);
+                    }
 
-        //            tempStr = Singleton<JavaScriptSerializer>.Instance.Serialize(cacheManage.GetCache<IList<MDSServer>>("MDSServers"));
-        //            for (int i = 0; i < cacheManage.GetCache<IList<MCSServer>>("MCSServers").Count; i++)
-        //            {
-        //                syncSocketClientUDP.SendMsg(cacheManage.GetCache<IList<MCSServer>>("MCSServers")[i].MCS_IP, cacheManage.GetCache<IList<MCSServer>>("MCSServers")[i].MCS_Port,
-        //                    CommonFlag.F_PSCallMCSStart + tempStr + "&&"
-        //                      + Singleton<JavaScriptSerializer>.Instance.Serialize(cacheManage.GetCache<IList<MCSServer>>("MCSServers")[i]));
-        //            }
+                    tempStr = CommonVariables.javaScriptSerializer.Serialize(cacheManage.GetCache<IList<MDSServer>>("MDSServers"));
+                    for (int i = 0; i < cacheManage.GetCache<IList<MCSServer>>("MCSServers").Count; i++)
+                    {
+                        CommonVariables.syncSocketClient.SendMsg(cacheManage.GetCache<IList<MCSServer>>("MCSServers")[i].MCS_IP, cacheManage.GetCache<IList<MCSServer>>("MCSServers")[i].MCS_Port,
+                            CommonFlag.F_PSCallMCSStart + tempStr + "&&"
+                              + Singleton<JavaScriptSerializer>.Instance.Serialize(cacheManage.GetCache<IList<MCSServer>>("MCSServers")[i]));
+                    }
 
-        //            tempStr = Singleton<JavaScriptSerializer>.Instance.Serialize(cacheManage.GetCache<IList<MCSServer>>("MCSServers"));
-        //            for (int i = 0; i < cacheManage.GetCache<IList<MDSServer>>("MDSServers").Count; i++)
-        //            {
-        //                syncSocketClientUDP.SendMsg(cacheManage.GetCache<IList<MDSServer>>("MDSServers")[i].MDS_IP, cacheManage.GetCache<IList<MDSServer>>("MDSServers")[i].MDS_Port,
-        //                    CommonFlag.F_PSCallMDSStart + tempStr + "&&"
-        //                    + Singleton<JavaScriptSerializer>.Instance.Serialize(cacheManage.GetCache<IList<MDSServer>>("MDSServers")[i]));
-        //            }
+                    tempStr = CommonVariables.javaScriptSerializer.Serialize(cacheManage.GetCache<IList<MCSServer>>("MCSServers"));
+                    for (int i = 0; i < cacheManage.GetCache<IList<MDSServer>>("MDSServers").Count; i++)
+                    {
+                        CommonVariables.syncSocketClient.SendMsg(cacheManage.GetCache<IList<MDSServer>>("MDSServers")[i].MDS_IP, cacheManage.GetCache<IList<MDSServer>>("MDSServers")[i].MDS_Port,
+                            CommonFlag.F_PSCallMDSStart + tempStr + "&&"
+                            + Singleton<JavaScriptSerializer>.Instance.Serialize(cacheManage.GetCache<IList<MDSServer>>("MDSServers")[i]));
+                    }
 
-        //            return string.Empty;
-        //        }
-        //        return "save MMSs failed";
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return ex.Message + ex.StackTrace;
-        //    }
-        //}
+                    return string.Empty;
+                }
+                return "save MMSs failed";
+            }
+            catch (Exception ex)
+            {
+                return ex.Message + ex.StackTrace;
+            }
+        }
 
         private string ArrangeChar()
         {
@@ -465,22 +460,6 @@ namespace Xugl.ImmediatelyChat.Site.Controllers
                 return ex.Message + ex.StackTrace;
             }
         }
-
-        //public ActionResult FindMMS()
-        //{
-        //    MMSModel mMSModel = new MMSModel();
-
-        //    if (cacheManage.GetCache<IList<MMSServer>>("MMSServers") == null || cacheManage.GetCache<IList<MMSServer>>("MMSServers").Count <= 0)
-        //    {
-        //        IList<MMSServer> mmsServers = mmsServerRepository.Table.ToList();
-        //        if (mmsServers != null && mmsServers.Count > 0)
-        //        {
-        //            cacheManage.AddCache<IList<MMSServer>>("MMSServers", mmsServers);
-        //        }
-        //    }
-
-        //    return Json(mMSModel, JsonRequestBehavior.AllowGet);
-        //}
 
         public ActionResult Index()
         {

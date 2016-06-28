@@ -126,7 +126,7 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                                 clientStatusModel.MCS_Port = model.MCS_Port;
                                 clientStatusModel.ObjectID = model.ObjectID;
 
-                                string mcs_UpdateTime = CommonVariables.SyncSocketClientIntance.SendMsg(clientStatusModel.MCS_IP, clientStatusModel.MCS_Port,
+                                string mcs_UpdateTime = CommonVariables.SyncSocketClientIntance.SendMsgWithReceive(clientStatusModel.MCS_IP, clientStatusModel.MCS_Port,
                                     CommonFlag.F_MCSReceiveMMSUAUpdateTime + CommonVariables.serializer.Serialize(clientStatusModel));
 
                                 if (string.IsNullOrEmpty(mcs_UpdateTime))
@@ -373,7 +373,7 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
 
                     clientStatusModel.UpdateTime = tempContactPerson.UpdateTime;
 
-                    string mcs_UpdateTime = CommonVariables.SyncSocketClientIntance.SendMsg(CommonVariables.MCSServers[i].MCS_IP, CommonVariables.MCSServers[i].MCS_Port,
+                    string mcs_UpdateTime = CommonVariables.SyncSocketClientIntance.SendMsgWithReceive(CommonVariables.MCSServers[i].MCS_IP, CommonVariables.MCSServers[i].MCS_Port,
                         CommonFlag.F_MCSReceiveMMSUAUpdateTime + CommonVariables.serializer.Serialize(clientStatusModel));
 
                     //CommonVariables.LogTool.Log("mcs_UpdateTime:" + mcs_UpdateTime);

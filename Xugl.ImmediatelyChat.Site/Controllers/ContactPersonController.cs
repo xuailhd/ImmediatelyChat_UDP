@@ -37,22 +37,12 @@ namespace Xugl.ImmediatelyChat.Site.Controllers
             contactPerson.ObjectID = Guid.NewGuid().ToString();
             contactPerson.ContactName = ObjectName;
             contactPerson.Password = Password;
-            if (Singleton<SyncSocketClient>.Instance == null)
-            {
-                Singleton<SyncSocketClient>.Instance = new SyncSocketClient();
-            }
-
-            if (Singleton<JavaScriptSerializer>.Instance == null)
-            {
-                Singleton<JavaScriptSerializer>.Instance = new JavaScriptSerializer();
-            }
-
 
             for (int i = 0; i < cacheManage.GetCache<IList<MMSServer>>("MMSServers").Count; i++)
             {
-                string returnstr = Singleton<SyncSocketClient>.Instance.SendMsg(cacheManage.GetCache<IList<MMSServer>>("MMSServers")[i].MMS_IP,
+                string returnstr = CommonVariables.syncSocketClient.SendMsgWithReceive(cacheManage.GetCache<IList<MMSServer>>("MMSServers")[i].MMS_IP,
                     cacheManage.GetCache<IList<MMSServer>>("MMSServers")[i].MMS_Port,
-                    Common.CommonFlag.F_PSSendMMSUser + Singleton<JavaScriptSerializer>.Instance.Serialize(contactPerson));
+                    Common.CommonFlag.F_PSSendMMSUser + CommonVariables.javaScriptSerializer.Serialize(contactPerson));
 
                 if (returnstr != contactPerson.ObjectID)
                 {

@@ -61,6 +61,7 @@
     <Compile Include="SocketAsyncHandler.cs" />
     <Compile Include="SocketListener.cs" />
     <Compile Include="SocketService.cs" />
+    <Compile Include="UDPSocketListener.cs" />
     <EmbeddedResource Include="FrmMain.resx">
       <DependentUpon>FrmMain.cs</DependentUpon>
     </EmbeddedResource>

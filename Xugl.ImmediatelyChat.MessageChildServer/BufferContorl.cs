@@ -58,8 +58,8 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
         private IDictionary<string, ClientModel> clientModels = new Dictionary<string, ClientModel>();
 
 
-        private AsyncSocketClient sendMsgClient;
-        private AsyncSocketClient getMsgClient;
+        private AsyncSocketClientUDP sendMsgClient;
+        private AsyncSocketClientUDP getMsgClient;
 
         private const int _maxSize = 1024;
         private const int _maxSendConnections = 10;
@@ -286,7 +286,7 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
         
         private void MainSendMSGThread()
         {
-            sendMsgClient = new AsyncSocketClient(_maxSize, _maxSendConnections, CommonVariables.LogTool);
+            sendMsgClient = new AsyncSocketClientUDP(_maxSize, _maxSendConnections, CommonVariables.LogTool);
             try
             {
                 while (IsRunning)
@@ -325,7 +325,7 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
 
         private void MainGetMSGThread()
         {
-            getMsgClient = new AsyncSocketClient(_maxSize, _maxGetConnections, CommonVariables.LogTool);
+            getMsgClient = new AsyncSocketClientUDP(_maxSize, _maxGetConnections, CommonVariables.LogTool);
             try
             {
                 while (IsRunning)

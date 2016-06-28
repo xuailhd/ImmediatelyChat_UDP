@@ -139,16 +139,16 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
             }
         }
 
-        public static SyncSocketClient SyncSocketClientIntance
+        public static SyncSocketClientUDP SyncSocketClientIntance
         {
             get
             {
-                if (Singleton<SyncSocketClient>.Instance == null)
+                if (Singleton<SyncSocketClientUDP>.Instance == null)
                 {
-                    Singleton<SyncSocketClient>.Instance = new SyncSocketClient();
+                    Singleton<SyncSocketClientUDP>.Instance = new SyncSocketClientUDP();
                 }
 
-                return Singleton<SyncSocketClient>.Instance;
+                return Singleton<SyncSocketClientUDP>.Instance;
             }
         }
 
