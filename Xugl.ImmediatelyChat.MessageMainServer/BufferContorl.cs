@@ -25,88 +25,35 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
 
         private int _maxSize = 1024;
         private int _maxConnnections = 10;
+        private IList<ContactDataWithServer> contactDataBuffer1 = new List<ContactDataWithServer>();
+        private IList<ContactDataWithServer> contactDataBuffer2 = new List<ContactDataWithServer>();
+        private bool UsingTagForcontactData = false;
+
+        private IList<ContactDataWithServer> exeContactDataBuffer = new List<ContactDataWithServer>();
+
+        private AsyncSocketClientUDP sendContactDataClient;
+        private int sendContactDataDelay = 100;
+
+        private IList<ContactDataWithServer> GetUsingContactDataBuffer
+        {
+            get
+            {
+                return UsingTagForcontactData ? contactDataBuffer1 : contactDataBuffer2;
+            }
+        }
+
+        private IList<ContactDataWithServer> GetUnUsingContactDataBuffer
+        {
+            get
+            {
+                return UsingTagForcontactData ? contactDataBuffer2 : contactDataBuffer1;
+            }
+        }
 
         public bool IsRunning = false;
-
-
         public BufferContorl()
         {
             contactPersonService = ObjectContainerFactory.CurrentContainer.Resolver<IContactPersonService>();
-        }
-
-        public IList<ContactData> PreparContactData(string objectID, string updateTime)
-        {
-            IList<ContactData> tempContactDatas = null;
-            ContactData tempContactData;
-
-            ContactPerson contactPerson = contactPersonService.FindContactPerson(objectID);
-
-            if(contactPerson!=null)
-            {
-                tempContactDatas = new List<ContactData>();
-                tempContactData = new ContactData();
-
-                tempContactData.ContactName = contactPerson.ContactName;
-                tempContactData.ImageSrc = contactPerson.ImageSrc;
-                tempContactData.LatestTime = contactPerson.LatestTime;
-                tempContactData.ObjectID = contactPerson.ObjectID;
-                tempContactData.UpdateTime = contactPerson.UpdateTime;
-                tempContactData.ContactDataID = Guid.NewGuid().ToString();
-                tempContactData.DataType = 0;
-                tempContactDatas.Add(tempContactData);
-
-                IList<ContactPersonList> contactPersonLists = contactPersonService.GetLastestContactPersonList(objectID, updateTime);
-                IList<ContactGroup> contactGroups = contactPersonService.GetLastestContactGroup(objectID, updateTime);
-                IList<ContactGroupSub> contactGroupSubs = contactPersonService.GetLastestContactGroupSub(objectID, updateTime);
-                if (contactPersonLists != null && contactPersonLists.Count > 0)
-                {
-                    foreach (ContactPersonList contactPersonList in contactPersonLists)
-                    {
-                        tempContactData = new ContactData();
-
-                        tempContactData.DestinationObjectID = contactPersonList.DestinationObjectID;
-                        tempContactData.ContactPersonName = contactPersonList.ContactPersonName;
-                        tempContactData.ObjectID = contactPersonList.ObjectID;
-                        tempContactData.IsDelete = contactPersonList.IsDelete;
-                        tempContactData.UpdateTime = contactPersonList.UpdateTime;
-                        tempContactData.ContactDataID = Guid.NewGuid().ToString();
-                        tempContactData.DataType = 1;
-                        tempContactDatas.Add(tempContactData);
-                    }
-                }
-                if (contactGroups != null && contactGroups.Count > 0)
-                {
-                    foreach (ContactGroup contactGroup in contactGroups)
-                    {
-                        tempContactData = new ContactData();
-                        tempContactData.GroupObjectID = contactGroup.GroupObjectID;
-                        tempContactData.GroupName = contactGroup.GroupName;
-                        tempContactData.IsDelete = contactGroup.IsDelete;
-                        tempContactData.UpdateTime = contactGroup.UpdateTime;
-                        tempContactData.ContactDataID = Guid.NewGuid().ToString();
-                        tempContactData.DataType = 2;
-                        tempContactData.ObjectID = objectID;
-                        tempContactDatas.Add(tempContactData);
-                    }
-                }
-                if (contactGroupSubs != null && contactGroupSubs.Count > 0)
-                {
-                    foreach (ContactGroupSub contactGroupSub in contactGroupSubs)
-                    {
-                        tempContactData = new ContactData();
-                        tempContactData.ContactGroupID = contactGroupSub.ContactGroupID;
-                        tempContactData.ContactPersonObjectID = contactGroupSub.ContactPersonObjectID;
-                        tempContactData.IsDelete = contactGroupSub.IsDelete;
-                        tempContactData.UpdateTime = contactGroupSub.UpdateTime;
-                        tempContactData.ContactDataID = Guid.NewGuid().ToString();
-                        tempContactData.DataType = 3;
-                        tempContactData.ObjectID = objectID;
-                        tempContactDatas.Add(tempContactData);
-                    }
-                }
-                return tempContactDatas;
-            }
-            return null;
         }
 
         public void StopMainThread()
@@ -114,6 +61,77 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
             IsRunning = false;
         }
 
+        public void AddContactDataIntoBuffer(IList<ContactData> contactDatas,string  serverIP,int port,int serverType)
+        {
+            ContactDataWithServer contactDataWithServer = new ContactDataWithServer();
+
+            if(string.IsNullOrEmpty(serverIP))
+            {
+                return;
+            }
+
+            if (contactDatas == null || contactDatas.Count <= 0)
+            {
+                return;
+            }
+
+            for(int i =0; i <contactDatas.Count;i++)
+            {
+
+            }
+        }
+
+        public void SendContactDataThread()
+        {
+            sendContactDataClient = new AsyncSocketClientUDP(_maxSize, _maxConnnections, CommonVariables.LogTool);
+            ContactDataWithServer contactDataWithServer;
+            while (IsRunning)
+            {
+                if(GetUsingContactDataBuffer.Count>0)
+                {
+                    UsingTagForcontactData = !UsingTagForcontactData;
+                    while(GetUnUsingContactDataBuffer.Count>0) 
+                    {
+                        contactDataWithServer = GetUnUsingContactDataBuffer[0];
+                        switch (contactDataWithServer.ServerType)
+                        {
+                            case 1:
+                                sendContactDataClient.SendMsg(contactDataWithServer.ServerIP, contactDataWithServer.ServerPort,
+                                    CommonFlag.F_UAVerifyUAInfo + CommonVariables.serializer.Serialize(contactDataWithServer.ContactData),
+                                    contactDataWithServer.ContactData.ContactDataID, HandlerSendContactDataReturnData);
+                                break;
+                            case 2:
+                                sendContactDataClient.SendMsg(contactDataWithServer.ServerIP, contactDataWithServer.ServerPort,
+                                    CommonFlag.F_MCSVerifyUAInfo + CommonVariables.serializer.Serialize(contactDataWithServer.ContactData),
+                                    contactDataWithServer.ContactData.ContactDataID, HandlerSendContactDataReturnData);
+                                break;
+                            default:
+                                continue;
+                        }
+                        GetUnUsingContactDataBuffer.RemoveAt(0);
+                    }
+                }
+                Thread.Sleep(sendContactDataDelay);
+            }
+        }
+
+
+        private string HandlerSendContactDataReturnData(string returnData, bool isError)
+        {
+            ContactDataWithServer contactDataWithServer = exeContactDataBuffer.Where(t => t.ContactData.ContactDataID == returnData).SingleOrDefault();
+            if (contactDataWithServer != null)
+            {
+                exeContactDataBuffer.Remove(contactDataWithServer);
+            }
+            if (isError)
+            {
+                if (contactDataWithServer != null)
+                {
+                    GetUsingContactDataBuffer.Add(contactDataWithServer);
+                }
+            }
+            return null;
+        }
     }
 
 }

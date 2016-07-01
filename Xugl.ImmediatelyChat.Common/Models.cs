@@ -54,13 +54,16 @@ namespace Xugl.ImmediatelyChat.Common
         public int Status { get; set; }
     }
 
-    public class ContactDataWithMCS
+    public class ContactDataWithServer
     {
+        /// <summary>
+        /// 1 UA;2 MCS;
+        /// </summary>
+        public int ServerType { get; set; }
+        public string ServerIP { get; set; }
+        public int ServerPort { get; set; }
+
         public ContactData ContactData { get; set; }
-
-        public string MCS_IP { get; set; }
-
-        public int MCS_Port { get; set; }
     }
 
     public class ContactData
@@ -90,7 +93,6 @@ namespace Xugl.ImmediatelyChat.Common
         /// </summary>
         public int DataType { get; set; }
         public string ContactDataID { get; set; }
-
     }
 
 

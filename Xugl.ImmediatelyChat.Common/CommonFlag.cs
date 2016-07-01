@@ -60,23 +60,26 @@ namespace Xugl.ImmediatelyChat.Common
         private static string f_MCSVerifyUAGetMSG = "VerifyGetMSG";
         private static string f_MCSVerfiyMDSMSG = "VerifyMDSMSG";
         private static string f_MCSReceiveUAFBMSG = "VerifyFBMSG";
-        private static string f_MCSReceiveUAInfo = "VerifyUAInfo";
+        private static string f_MCSVerifyUAInfo = "MCSVerifyUAInfo";
         private static string f_MCSReceiveMMSUAUpdateTime = "VerifyUAUpdateTime";
         public static string F_MCSVerifyUA { get { return f_MCSVerifyUA; } }
         public static string F_MCSVerifyUAMSG { get { return f_MCSVerifyUAMSG; } }
         public static string F_MCSVerifyUAGetMSG { get { return f_MCSVerifyUAGetMSG; } }
         public static string F_MCSVerfiyMDSMSG { get { return f_MCSVerfiyMDSMSG; } }
         public static string F_MCSReceiveUAFBMSG { get { return f_MCSReceiveUAFBMSG; } }
-        public static string F_MCSReceiveUAInfo { get { return f_MCSReceiveUAInfo; } }
+        public static string F_MCSVerifyUAInfo { get { return f_MCSVerifyUAInfo; } }
         public static string F_MCSReceiveMMSUAUpdateTime { get { return f_MCSReceiveMMSUAUpdateTime; } }
 
         private static string f_MDSVerifyMCSMSG = "VerifyMCSMSG";
         private static string f_MDSVerifyMCSGetMSG = "VerifyMCSGetMSG";
         private static string f_MDSReciveMCSFBMSG = "VerifyMCSFBMSG";
-
         public static string F_MDSVerifyMCSMSG { get { return f_MDSVerifyMCSMSG; } }
         public static string F_MDSVerifyMCSGetMSG { get { return f_MDSVerifyMCSGetMSG; } }
         public static string F_MDSReciveMCSFBMSG { get { return f_MDSReciveMCSFBMSG; } }
+
+
+        private static string f_UAVerifyUAInfo = "UAVerifyUAInfo";
+        public static string F_UAVerifyUAInfo { get { return f_UAVerifyUAInfo; } }
 
         public static object lockobject = new object();
     }

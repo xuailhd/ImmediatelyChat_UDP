@@ -184,7 +184,6 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             return string.Empty;
         }
 
-
         public void BeginService()
         {
             base.BeginService(CommonVariables.MDSIP,CommonVariables.MDSPort);
