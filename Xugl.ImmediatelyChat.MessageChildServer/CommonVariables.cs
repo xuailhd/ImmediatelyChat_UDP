@@ -22,6 +22,18 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
         public static string ArrangeStr { get; set; }
 
         public static bool IsBeginMessageService { get; set; }
+
+        public static UDPSocketListener Listener
+        {
+            get {
+                if (Singleton<UDPSocketListener>.Instance == null)
+                {
+                    Singleton<UDPSocketListener>.Instance = new UDPSocketListener();
+                }
+                return Singleton<UDPSocketListener>.Instance;
+            }
+        }
+
         #region JavaScriptSerializer
 
         public static JavaScriptSerializer serializer

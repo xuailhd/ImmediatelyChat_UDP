@@ -15,24 +15,28 @@ namespace Xugl.ImmediatelyChat.SocketEngine
 {
     public abstract class AsyncSocketListenerUDP<T> where T : AsyncUserToken, new()
     {
-        private int m_maxConnnections;
+        private int m_maxReciveCount;
+        private int m_maxSendCount;
         private int m_maxSize;
         const int opsToPreAlloc = 2;
         private SocketAsyncEventArgsPool<SocketAsyncEventArgs> m_readWritePool;
         private Socket mainServiceSocket;
         private BufferManager m_bufferManager;
 
-        private Semaphore m_maxNumberAcceptedClients;
+        private Semaphore m_maxNumberReceiveClients;
+        private Semaphore m_maxNumberSendClients;
         private ICommonLog LogTool;
 
-        public AsyncSocketListenerUDP(int _maxSize, int _maxConnnections, ICommonLog _logTool)
+        public AsyncSocketListenerUDP(int _maxSize, int _maxReciveCount,int _maxSendCount, ICommonLog _logTool)
         {
             m_readWritePool = new SocketAsyncEventArgsPool<SocketAsyncEventArgs>();
-            m_maxConnnections = _maxConnnections;
+            m_maxReciveCount = _maxReciveCount;
+            m_maxSendCount = _maxSendCount;
             m_maxSize = _maxSize;
             LogTool = _logTool;
 
-            m_maxNumberAcceptedClients = new Semaphore(m_maxConnnections, m_maxConnnections);
+            m_maxNumberReceiveClients = new Semaphore(m_maxReciveCount, m_maxReciveCount);
+            m_maxNumberSendClients = new Semaphore(m_maxSendCount, m_maxSendCount);
         }
 
         private void IO_Completed(object sender, SocketAsyncEventArgs e)
@@ -53,7 +57,6 @@ namespace Xugl.ImmediatelyChat.SocketEngine
             
         }
 
-
         protected void BeginService(string ipaddress,int port)
         {
             IPAddress ip = IPAddress.Parse(ipaddress);
@@ -64,9 +67,18 @@ namespace Xugl.ImmediatelyChat.SocketEngine
             //mainServiceSocket.Listen(m_maxConnnections);
 
             //m_bufferManager = BufferManager.CreateBufferManager(m_maxConnnections * m_maxSize * opsToPreAlloc, m_maxSize);
-            m_bufferManager = BufferManager.CreateBufferManager(m_maxConnnections * m_maxSize, m_maxSize);
+            m_bufferManager = BufferManager.CreateBufferManager((m_maxReciveCount + m_maxSendCount) * m_maxSize, m_maxSize);
 
-            for (int i = 0; i < m_maxConnnections; i++)
+            for (int i = 0; i < m_maxReciveCount; i++)
+            {
+                SocketAsyncEventArgs socketAsyncEventArg = new SocketAsyncEventArgs();
+                socketAsyncEventArg.UserToken = new T();
+                socketAsyncEventArg.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
+                socketAsyncEventArg.SetBuffer(m_bufferManager.TakeBuffer(m_maxSize), 0, m_maxSize);
+                m_readWritePool.Push(socketAsyncEventArg);
+            }
+
+            for (int i = 0; i < m_maxSendCount; i++)
             {
                 SocketAsyncEventArgs socketAsyncEventArg = new SocketAsyncEventArgs();
                 socketAsyncEventArg.UserToken = new T();
@@ -82,7 +94,7 @@ namespace Xugl.ImmediatelyChat.SocketEngine
 
         private void StartReceive()
         {
-            m_maxNumberAcceptedClients.WaitOne();
+            m_maxNumberReceiveClients.WaitOne();
             SocketAsyncEventArgs e = m_readWritePool.Pop();
             bool willRaiseEvent = mainServiceSocket.ReceiveFromAsync(e);
             if (!willRaiseEvent)
