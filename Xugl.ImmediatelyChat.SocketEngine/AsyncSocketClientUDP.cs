@@ -12,7 +12,7 @@ using Xugl.ImmediatelyChat.Core;
 
 namespace Xugl.ImmediatelyChat.SocketEngine
 {
-    public class AsyncSocketClientUDP
+    public class AsyncSocketClientUDP<T> where T : AsyncClientToken,new()
     {
         //public static ManualResetEvent allDone = new ManualResetEvent(false);
         private int m_maxConnnections;
@@ -61,7 +61,6 @@ namespace Xugl.ImmediatelyChat.SocketEngine
             int sendcount = Encoding.UTF8.GetBytes(sendData, 0, sendData.Length, asyncClientToken.Buffer, 0);
             asyncClientToken.Datasize = sendcount;
 
-            
             try
             {
                 IPEndPoint ipe = new IPEndPoint(IPAddress.Parse(asyncClientToken.IP), asyncClientToken.Port);

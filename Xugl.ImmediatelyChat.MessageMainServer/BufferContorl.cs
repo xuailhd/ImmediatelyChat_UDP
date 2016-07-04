@@ -119,10 +119,11 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
         private string HandlerSendContactDataReturnData(string returnData, bool isError)
         {
             ContactDataWithServer contactDataWithServer = exeContactDataBuffer.Where(t => t.ContactData.ContactDataID == returnData).SingleOrDefault();
-            if (contactDataWithServer != null)
+            if (contactDataWithServer == null)
             {
-                exeContactDataBuffer.Remove(contactDataWithServer);
+                return null;
             }
+            exeContactDataBuffer.Remove(contactDataWithServer);
             if (isError)
             {
                 if (contactDataWithServer != null)

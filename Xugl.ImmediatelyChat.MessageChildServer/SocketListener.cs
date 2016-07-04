@@ -16,29 +16,29 @@ using Xugl.ImmediatelyChat.SocketEngine;
 
 namespace Xugl.ImmediatelyChat.MessageChildServer
 {
-    public class MCSListenerToken : AsyncUserToken
-    {
-        private readonly IContactPersonService _contactPersonService;
+    //public class MCSListenerToken : AsyncUserToken
+    //{
+    //    private readonly IContactPersonService _contactPersonService;
 
-        public MCSListenerToken()
-        {
-            _contactPersonService = ObjectContainerFactory.CurrentContainer.Resolver<IContactPersonService>();
-        }
+    //    public MCSListenerToken()
+    //    {
+    //        _contactPersonService = ObjectContainerFactory.CurrentContainer.Resolver<IContactPersonService>();
+    //    }
 
-        public IList<MsgRecord> Models { get; set; }
+    //    public IList<MsgRecord> Models { get; set; }
 
-        public string UAObjectID { get; set; }
+    //    public string UAObjectID { get; set; }
 
-        public string TaskFlag { get; set; }
+    //    public string TaskFlag { get; set; }
 
-        public IContactPersonService ContactPersonService
-        {
-            get
-            {
-                return _contactPersonService;
-            }
-        }
-    }
+    //    public IContactPersonService ContactPersonService
+    //    {
+    //        get
+    //        {
+    //            return _contactPersonService;
+    //        }
+    //    }
+    //}
 
     //internal class SocketListener : AsyncSocketListener<MCSListenerToken>
     //{

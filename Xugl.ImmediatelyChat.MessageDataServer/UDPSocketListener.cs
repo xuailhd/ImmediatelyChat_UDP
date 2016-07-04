@@ -155,7 +155,6 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
                             break;
                         }
                     }
-
                     return msgModel.MsgID;
                 }
             }

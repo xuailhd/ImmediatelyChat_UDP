@@ -83,22 +83,21 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
 
         public void AddClientModel(ClientModel clientModel)
         {
-
-            for (int i = 0; i < CommonVariables.MDSServers.Count; i++)
-            {
-                if (CommonVariables.MDSServers[i].ArrangeStr.Contains(clientModel.ObjectID.Substring(0, 1)))
-                {
-                    clientModel.MDS_IP = CommonVariables.MDSServers[i].MDS_IP;
-                    clientModel.MDS_Port = CommonVariables.MDSServers[i].MDS_Port;
-                    if (String.IsNullOrEmpty( clientModel.LatestTime))
-                    {
-                        clientModel.LatestTime = DateTime.Now.ToString(CommonFlag.F_DateTimeFormat);
-                    }
-                    break;
-                }
-            }
             if (!clientModels.ContainsKey(clientModel.ObjectID))
             {
+                for (int i = 0; i < CommonVariables.MDSServers.Count; i++)
+                {
+                    if (CommonVariables.MDSServers[i].ArrangeStr.Contains(clientModel.ObjectID.Substring(0, 1)))
+                    {
+                        clientModel.MDS_IP = CommonVariables.MDSServers[i].MDS_IP;
+                        clientModel.MDS_Port = CommonVariables.MDSServers[i].MDS_Port;
+                        if (String.IsNullOrEmpty(clientModel.LatestTime))
+                        {
+                            clientModel.LatestTime = DateTime.Now.ToString(CommonFlag.F_DateTimeFormat);
+                        }
+                        break;
+                    }
+                }
                 clientModels.Add(clientModel.ObjectID, clientModel);
             }
         }
@@ -224,6 +223,10 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
             if (clientModels.ContainsKey(clientModel.ObjectID))
             {
                 clientModels[clientModel.ObjectID].LatestTime = DateTime.Now.ToString(CommonFlag.F_DateTimeFormat);
+            }
+            else
+            {
+                AddClientModel(clientModel);
             }
         }
 

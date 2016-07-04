@@ -25,9 +25,11 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
         private IList<MsgRecord> bufferMsgRecords2 = new List<MsgRecord>();
         private bool UsingTagForMsgRecord = false;
 
-        private IList<GetMsgModel> bufferGetMsgs1 = new List<GetMsgModel>();
-        private IList<GetMsgModel> bufferGetMsgs2 = new List<GetMsgModel>();
-        private bool UsingTagForGetMsg = false;
+        private IList<MsgRecordModel> bufferSendMsgRecords1 = new List<MsgRecordModel>();
+        private IList<MsgRecordModel> bufferSendMsgRecords2 = new List<MsgRecordModel>();
+        private bool UsingTagForSendMsgRecord = false;
+
+        private IList<MsgRecordModel> exeSendMsgRecords1Buffer = new List<MsgRecordModel>();
 
         private Thread mainThread = null;
 
@@ -55,10 +57,31 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
         {
             String strmsg= CommonFlag.F_MCSVerfiyMDSMSG + CommonVariables.serializer.Serialize(msgRecord);
             asyncSocketClient.SendMsg(mcsServer.MCS_IP, mcsServer.MCS_Port, strmsg, msgRecord.MsgID, HandMCSReturnData);
+
+            MsgRecordModel msgRecordmodel =new MsgRecordModel();
+            msgRecordmodel.IsSended = msgRecord.IsSended;
+            msgRecordmodel.MCS_IP = mcsServer.MCS_IP;
+            msgRecordmodel.MCS_Port = mcsServer.MCS_Port;
+            msgRecordmodel.MDS_IP = CommonVariables.MDSIP;
+            msgRecordmodel.MDS_Port =CommonVariables.MDSPort;
+            msgRecordmodel.MsgContent = msgRecord.MsgContent;
+            msgRecordmodel.MsgID = msgRecord.MsgID;
+            msgRecordmodel.MsgRecipientGroupID = msgRecord.MsgRecipientGroupID;
+            msgRecordmodel.MsgRecipientObjectID =msgRecord.MsgRecipientObjectID;
+            msgRecordmodel.MsgSenderName = msgRecord.MsgSenderName;
+            msgRecordmodel.MsgSenderObjectID = msgRecord.MsgSenderObjectID;
+            msgRecordmodel.MsgType =msgRecord.MsgType;
+            msgRecordmodel.reTryCount = 0;
+            msgRecordmodel.SendTime = msgRecord.SendTime;
+            exeSendMsgRecords1Buffer.Add(msgRecordmodel);
         }
 
         private string HandMCSReturnData(string returnData, bool isError)
         {
+            if(isError)
+            {
+
+            }
             return string.Empty;
         }
 
@@ -94,21 +117,22 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             }
         }
 
-        private IList<GetMsgModel> GetUsingGetMsgBuffer
+        private IList<MsgRecordModel> GetUsingSendMsgRecordBuffer
         {
             get
             {
-                return UsingTagForMsgRecord ? bufferGetMsgs1 : bufferGetMsgs2;
+                return UsingTagForSendMsgRecord ? bufferSendMsgRecords1 : bufferSendMsgRecords2;
             }
         }
 
-        private IList<GetMsgModel> GetUnUsingGetMsgBuffer
+        private IList<MsgRecordModel> GetUnUsingSendMsgRecordBuffer
         {
             get
             {
-                return UsingTagForMsgRecord ? bufferGetMsgs2 : bufferGetMsgs1;
+                return UsingTagForSendMsgRecord ? bufferSendMsgRecords2 : bufferSendMsgRecords1;
             }
         }
+
 
         public IList<MsgRecord> GetMSG(IMsgRecordService _msgRecordService, ClientModel clientModel)
         {
@@ -155,8 +179,6 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
                         UsingTagForMsgRecord = !UsingTagForMsgRecord;
 
                         msgRecordService.BatchSave(GetUnUsingMsgRecordBuffer);
-
-                        //savedIntoDataBase = GetUnUsingBufferContainer.Select(t => t.SendTime).Max();
 
                         GetUnUsingMsgRecordBuffer.Clear();
                     }
