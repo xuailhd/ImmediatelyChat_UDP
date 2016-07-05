@@ -128,6 +128,7 @@ namespace Xugl.ImmediatelyChat.Common
         public int MCS_Port { get; set; }
 
         public int reTryCount { get; set; }
+        public string ExeSendTime { get; set; }
         /// <summary>
         /// 0:normal  1:success  2:error
         /// </summary>

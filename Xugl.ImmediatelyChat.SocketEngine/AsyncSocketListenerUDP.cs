@@ -69,7 +69,7 @@ namespace Xugl.ImmediatelyChat.SocketEngine
             //m_bufferManager = BufferManager.CreateBufferManager(m_maxConnnections * m_maxSize * opsToPreAlloc, m_maxSize);
             m_bufferManager = BufferManager.CreateBufferManager((m_maxReciveCount + m_maxSendCount) * m_maxSize, m_maxSize);
 
-            for (int i = 0; i < m_maxReciveCount; i++)
+            for (int i = 0; i < m_maxReciveCount + m_maxSendCount; i++)
             {
                 SocketAsyncEventArgs socketAsyncEventArg = new SocketAsyncEventArgs();
                 socketAsyncEventArg.UserToken = new T();
@@ -78,16 +78,6 @@ namespace Xugl.ImmediatelyChat.SocketEngine
                 m_readWritePool.Push(socketAsyncEventArg);
             }
 
-            for (int i = 0; i < m_maxSendCount; i++)
-            {
-                SocketAsyncEventArgs socketAsyncEventArg = new SocketAsyncEventArgs();
-                socketAsyncEventArg.UserToken = new T();
-                socketAsyncEventArg.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
-                socketAsyncEventArg.RemoteEndPoint = ipe;
-                socketAsyncEventArg.SetBuffer(m_bufferManager.TakeBuffer(m_maxSize), 0, m_maxSize);
-                m_readWritePool.Push(socketAsyncEventArg);
-            }
-            
             StartReceive();
         }
 
@@ -115,19 +105,18 @@ namespace Xugl.ImmediatelyChat.SocketEngine
             {
                 if (e.BytesTransferred > 0 && e.SocketError == SocketError.Success)
                 {
-                    token.IP = ((IPEndPoint)e.RemoteEndPoint).Address.ToString();
-                    token.Port = ((IPEndPoint)e.RemoteEndPoint).Port;
                     string data = Encoding.UTF8.GetString(e.Buffer, e.Offset, e.BytesTransferred);
                     string returndata = HandleRecivedMessage(data, token);
                     if (string.IsNullOrEmpty(returndata))
                     {
-                        CloseClientSocket(e);
                         return;
                     }
-                    
                     int bytecount = Encoding.UTF8.GetBytes(returndata, 0, returndata.Length, e.Buffer,0);
-
-                    e.SetBuffer(0,bytecount);
+                    m_maxNumberReceiveClients.Release();
+                    m_maxNumberSendClients.WaitOne();
+                    token.IP = ((IPEndPoint)e.RemoteEndPoint).Address.ToString();
+                    token.Port = ((IPEndPoint)e.RemoteEndPoint).Port;
+                    e.SetBuffer(0, bytecount);
                     bool willRaiseEvent = mainServiceSocket.SendToAsync(e);
                     if (!willRaiseEvent)
                     {
@@ -136,18 +125,44 @@ namespace Xugl.ImmediatelyChat.SocketEngine
                 }
                 else
                 {
-                    HandleError(token);
-                    CloseClientSocket(e);
+                    ReleaseReceive(e);
                 }
             }
             catch (Exception ex)
             {
                 LogTool.Log(ex.Message + ex.StackTrace);
-                HandleError(token);
-                CloseClientSocket(e);
+                ReleaseReceive(e);
             }
         }
 
+        public bool SendMsg(string ipaddress, int port, string sendData, string messageID)
+        {
+            if(string.IsNullOrEmpty(ipaddress) || port<=0 || port>65535)
+            {
+                return false;
+            }
+            m_maxNumberSendClients.WaitOne();
+            SocketAsyncEventArgs e = m_readWritePool.Pop();
+            try
+            {
+                IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(ipaddress), port);
+                e.RemoteEndPoint = endPoint;
+                int bytecount = Encoding.UTF8.GetBytes(sendData, 0, sendData.Length, e.Buffer, 0);
+                e.SetBuffer(0, bytecount);
+                bool willRaiseEvent = mainServiceSocket.SendToAsync(e);
+                if (!willRaiseEvent)
+                {
+                    ProcessSend(e);
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LogTool.Log(ex.Message + ex.StackTrace);
+                ReleaseSend(e);
+            }
+            return false;
+        }
 
         // This method is invoked when an asynchronous send operation completes.  
         // The method issues another receive on the socket to read any additional 
@@ -159,34 +174,30 @@ namespace Xugl.ImmediatelyChat.SocketEngine
             T token = (T)e.UserToken;
             try
             {
-                if (e.SocketError == SocketError.Success)
-                {
-                    e.SetBuffer(0, m_maxSize);
-                    bool willRaiseEvent = mainServiceSocket.ReceiveFromAsync(e);
-                    if (!willRaiseEvent)
-                    {
-                        ProcessReceive(e);
-                    }
-                    //CloseClientSocket(e);
-                }
-                else
+                if (e.SocketError != SocketError.Success)
                 {
                     HandleError(token);
-                    CloseClientSocket(e);
                 }
+                ReleaseSend(e);
             }
             catch (Exception ex)
             {
                 LogTool.Log(ex.Message + ex.StackTrace);
                 HandleError(token);
-                CloseClientSocket(e);
+                ReleaseSend(e);
             }
         }
 
-        private void CloseClientSocket(SocketAsyncEventArgs e)
+        private void ReleaseReceive(SocketAsyncEventArgs e)
         {
             m_readWritePool.Push(e);
-            m_maxNumberAcceptedClients.Release();
+            m_maxNumberReceiveClients.Release();
+        }
+
+        private void ReleaseSend(SocketAsyncEventArgs e)
+        {
+            m_readWritePool.Push(e);
+            m_maxNumberSendClients.Release();
         }
 
         public void CloseListener()
