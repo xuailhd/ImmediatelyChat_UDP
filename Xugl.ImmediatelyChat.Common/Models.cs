@@ -127,6 +127,9 @@ namespace Xugl.ImmediatelyChat.Common
         public string MCS_IP { get; set; }
         public int MCS_Port { get; set; }
 
+        public string Client_IP { get; set; }
+        public int Client_port { get; set; }
+
         public int reTryCount { get; set; }
         public string ExeSendTime { get; set; }
         /// <summary>

@@ -25,16 +25,23 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
         /// <summary>
         /// new message Buffer, from UA
         /// </summary>
-        private IList<MsgRecordModel> BufferMsgRecordModels1 = new List<MsgRecordModel>();
-        private IList<MsgRecordModel> BufferMsgRecordModels2 = new List<MsgRecordModel>();
-        private bool UsingTagForMsgRecord = false;
+        private IList<MsgRecordModel> MsgRecordBufferToMDS1 = new List<MsgRecordModel>();
+        private IList<MsgRecordModel> MsgRecordBufferToMDS2 = new List<MsgRecordModel>();
+        private bool UsingTagForMDS = false;
+
+
+        /// <summary>
+        /// new message Buffer, from MDS
+        /// </summary>
+        private IList<MsgRecordModel> MsgRecordBufferToUA1 = new List<MsgRecordModel>();
+        private IList<MsgRecordModel> MsgRecordBufferToUA2 = new List<MsgRecordModel>();
+        private bool UsingTagForUA = false;
 
         /// <summary>
         /// for prevent async data error
         /// </summary>
-        private IList<MsgRecordModel> ExeingMsgRecordModels1 = new List<MsgRecordModel>();
-        private IList<MsgRecordModel> ExeingMsgRecordModels2 = new List<MsgRecordModel>();
-        private bool UsingTagForExeing = false;
+        private IList<MsgRecordModel> ExeingMsgRecordForMDS = new List<MsgRecordModel>();
+        private IList<MsgRecordModel> ExeingMsgRecordForUA = new List<MsgRecordModel>();
 
         /// <summary>
         /// message Buffer, use to send to UA
@@ -91,61 +98,61 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
 
         #region using unusing buffer manage
 
-        private IList<MsgRecordModel> GetUsingMsgRecordBuffer
+        private IList<MsgRecordModel> GetUsingMsgRecordBufferToMDS
         {
             get { 
-                if(UsingTagForMsgRecord)
+                if(UsingTagForMDS)
                 {
-                    return BufferMsgRecordModels1;
+                    return MsgRecordBufferToMDS1;
                 }
                 else
                 {
-                    return BufferMsgRecordModels2;
+                    return MsgRecordBufferToMDS2;
                 }
             }
         }
 
-        private IList<MsgRecordModel> GetUnUsingMsgRecordBuffer
+        private IList<MsgRecordModel> GetUnUsingMsgRecordBufferToMDS
         {
             get
             {
-                if (!UsingTagForMsgRecord)
+                if (!UsingTagForMDS)
                 {
-                    return BufferMsgRecordModels1;
+                    return MsgRecordBufferToMDS1;
                 }
                 else
                 {
-                    return BufferMsgRecordModels2;
+                    return MsgRecordBufferToMDS2;
                 }
             }
         }
 
-        private IList<MsgRecordModel> GetUsingExeingMsgRecordBuffer
+        private IList<MsgRecordModel> GetUsingMsgRecordBufferToUA
         {
             get
             {
-                if (UsingTagForExeing)
+                if (UsingTagForUA)
                 {
-                    return ExeingMsgRecordModels1;
+                    return MsgRecordBufferToUA1;
                 }
                 else
                 {
-                    return ExeingMsgRecordModels2;
+                    return MsgRecordBufferToUA2;
                 }
             }
         }
 
-        private IList<MsgRecordModel> GetUnUsingExeingMsgRecordBuffer
+        private IList<MsgRecordModel> GetUnUsingMsgRecordBufferToUA
         {
             get
             {
-                if (!UsingTagForExeing)
+                if (!UsingTagForUA)
                 {
-                    return ExeingMsgRecordModels1;
+                    return MsgRecordBufferToUA1;
                 }
                 else
                 {
-                    return ExeingMsgRecordModels2;
+                    return MsgRecordBufferToUA2;
                 }
             }
         }
@@ -258,7 +265,7 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
         public void StartMainThread()
         {
             IsRunning = true;
-            ThreadStart threadStart = new ThreadStart(MainSendMSGThread);
+            ThreadStart threadStart = new ThreadStart(MainSendMSGToMDSThread);
             Thread thread = new Thread(threadStart);
             thread.Start();
 
@@ -273,33 +280,106 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
             IsRunning = false;
         }
         
-        private void MainSendMSGThread()
+        private MsgRecord ModelTransfor(MsgRecordModel msgRecordModel)
+        {
+            MsgRecord msgRecord = new MsgRecord();
+            msgRecord.IsSended = msgRecordModel.IsSended;
+            msgRecord.MsgContent = msgRecordModel.MsgContent;
+            msgRecord.MsgID = msgRecordModel.MsgContent;
+            msgRecord.MsgRecipientGroupID = msgRecordModel.MsgRecipientGroupID;
+            msgRecord.MsgRecipientObjectID = msgRecordModel.MsgRecipientObjectID;
+            msgRecord.MsgSenderName = msgRecordModel.MsgSenderName;
+            msgRecord.MsgSenderObjectID = msgRecordModel.MsgSenderObjectID;
+            msgRecord.MsgType = msgRecordModel.MsgType;
+            msgRecord.SendTime = msgRecordModel.SendTime;
+
+            return msgRecord;
+        }
+
+        private MsgRecordModel ModelTransfor(MsgRecord msgRecord)
+        {
+            MsgRecordModel msgRecordModel = new MsgRecordModel();
+            msgRecordModel.IsSended = msgRecord.IsSended;
+            msgRecordModel.MsgContent = msgRecord.MsgContent;
+            msgRecordModel.MsgID = msgRecord.MsgContent;
+            msgRecordModel.MsgRecipientGroupID = msgRecord.MsgRecipientGroupID;
+            msgRecordModel.MsgRecipientObjectID = msgRecord.MsgRecipientObjectID;
+            msgRecordModel.MsgSenderName = msgRecord.MsgSenderName;
+            msgRecordModel.MsgSenderObjectID = msgRecord.MsgSenderObjectID;
+            msgRecordModel.MsgType = msgRecord.MsgType;
+            msgRecordModel.SendTime = msgRecord.SendTime;
+            return msgRecordModel;
+        }
+
+        private void MainSendMSGToMDSThread()
         {
             try
             {
                 while (IsRunning)
                 {
-                    if (GetUsingMsgRecordBuffer.Count > 0)
+                    if (GetUsingMsgRecordBufferToMDS.Count > 0)
                     {
-                        UsingTagForMsgRecord = !UsingTagForMsgRecord;
+                        UsingTagForMDS = !UsingTagForMDS;
 
-                        while (GetUnUsingMsgRecordBuffer.Count > 0)
+                        while (GetUnUsingMsgRecordBufferToMDS.Count > 0)
                         {
-                            MsgRecordModel msgRecordModel = GetUnUsingMsgRecordBuffer[0];
+                            MsgRecordModel msgRecordModel = GetUnUsingMsgRecordBufferToMDS[0];
                             try
                             {
-                                string messageStr = CommonFlag.F_MDSVerifyMCSMSG + CommonVariables.serializer.Serialize(msgRecordModel);
+                                string messageStr = CommonFlag.F_MDSVerifyMCSMSG + CommonVariables.serializer.Serialize(ModelTransfor(msgRecordModel));
                                 //CommonVariables.LogTool.Log("begin send mds " + msgRecordModel.MDS_IP + " port:" + msgRecordModel.MDS_Port + messageStr);
                                 if( CommonVariables.Listener.SendMsg(msgRecordModel.MDS_IP, msgRecordModel.MDS_Port, messageStr, msgRecordModel.MsgID))
                                 {
-                                    GetUsingExeingMsgRecordBuffer.Add(msgRecordModel);
+                                    msgRecordModel.ExeSendTime = DateTime.Now.ToString(CommonFlag.F_DateTimeFormat);
+                                    msgRecordModel.reTryCount = msgRecordModel.reTryCount + 1;
+                                    ExeingMsgRecordForMDS.Add(msgRecordModel);
                                 }
                             }
                             catch (Exception ex)
                             {
                                 CommonVariables.LogTool.Log(msgRecordModel.MsgID + ex.Message + ex.StackTrace);
                             }
-                            GetUnUsingMsgRecordBuffer.RemoveAt(0);
+                            GetUnUsingMsgRecordBufferToMDS.RemoveAt(0);
+                        }
+                    }
+                    Thread.Sleep(_sendDelay);
+                }
+            }
+            catch (Exception ex)
+            {
+                CommonVariables.LogTool.Log(ex.Message + ex.StackTrace);
+            }
+        }
+
+        private void MainSendMSGToUAThread()
+        {
+            try
+            {
+                while (IsRunning)
+                {
+                    if (GetUsingMsgRecordBufferToUA.Count > 0)
+                    {
+                        UsingTagForUA = !UsingTagForUA;
+
+                        while (GetUnUsingMsgRecordBufferToUA.Count > 0)
+                        {
+                            MsgRecordModel msgRecordModel = GetUnUsingMsgRecordBufferToUA[0];
+                            try
+                            {
+                                string messageStr = CommonFlag.F_UAVerifyMCSMSG + CommonVariables.serializer.Serialize(ModelTransfor(msgRecordModel));
+                                //CommonVariables.LogTool.Log("begin send mds " + msgRecordModel.MDS_IP + " port:" + msgRecordModel.MDS_Port + messageStr);
+                                if (CommonVariables.Listener.SendMsg(msgRecordModel.Client_IP, msgRecordModel.Client_port, messageStr, msgRecordModel.MsgID))
+                                {
+                                    msgRecordModel.ExeSendTime = DateTime.Now.ToString(CommonFlag.F_DateTimeFormat);
+                                    msgRecordModel.reTryCount = msgRecordModel.reTryCount + 1;
+                                    ExeingMsgRecordForUA.Add(msgRecordModel);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                CommonVariables.LogTool.Log(msgRecordModel.MsgID + ex.Message + ex.StackTrace);
+                            }
+                            GetUnUsingMsgRecordBufferToUA.RemoveAt(0);
                         }
                     }
                     Thread.Sleep(_sendDelay);
@@ -317,18 +397,56 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
             {
                 while (IsRunning)
                 {
-                    if (GetUsingExeingMsgRecordBuffer.Count > 0)
+                    if (ExeingMsgRecordForUA.Count > 0)
                     {
-                        if()
-                        IList<ClientModel> tempclientModels = clientModels.Values.Where(t => t.LatestTime.CompareTo(DateTime.Now.AddMinutes(-3).ToString()) > 0).ToList();
+                        IList<MsgRecordModel> needdelete1 = ExeingMsgRecordForUA.Where(t => t.reTryCount > 3).ToList();
 
-                        if (tempclientModels != null && tempclientModels.Count > 0)
+                        if(needdelete1!=null && needdelete1.Count>0)
                         {
-                            for (int i = 0; i < tempclientModels.Count; i++)
+                            foreach(MsgRecordModel tempmodel in needdelete1)
                             {
-                                SendGetMsgToMDS(tempclientModels[i]);
+                                ExeingMsgRecordForUA.Remove(tempmodel);
                             }
                         }
+
+                        IList<MsgRecordModel> tempmodels = ExeingMsgRecordForUA.Where(t => t.ExeSendTime.CompareTo(DateTime.Now.AddSeconds(-3)
+                            .ToString(CommonFlag.F_DateTimeFormat)) < 0 && t.reTryCount <= 3).ToList();
+
+                        IList<ClientModel> tempclientModels = clientModels.Values.Where(t => t.LatestTime.CompareTo(DateTime.Now.AddSeconds(-10)
+                            .ToString(CommonFlag.F_DateTimeFormat)) < 0).ToList();
+
+                        if(tempclientModels!=null && tempclientModels.Count>0)
+                        {
+                            foreach (ClientModel clientModel in tempclientModels)
+                            {
+                                clientModels.Remove(clientModel.ObjectID);
+                            }
+                        }
+
+
+                        IList<MsgRecordModel> needdelete2 = (from aa in tempmodels
+                                                             join bb in tempclientModels on aa.MsgRecipientObjectID equals bb.ObjectID into cc
+                                                             from temp in cc.DefaultIfEmpty()
+                                                             where temp == null
+                                                             select aa).ToList();
+
+
+                        if (needdelete2 != null && needdelete2.Count > 0)
+                        {
+                            for (int i = 0; i < needdelete2.Count; i++)
+                            {
+                                foreach (MsgRecordModel tempmodel in needdelete2)
+                                {
+                                    ExeingMsgRecordForUA.Remove(tempmodel);
+                                    if (tempmodel.reTryCount < 3)
+                                    {
+                                        GetUsingMsgRecordBufferToUA.Add(tempmodel);
+                                    }
+                                }
+                            }
+                        }
+
+                        foreach()
                     }
                     Thread.Sleep(_sendDelay);
                 }
@@ -346,20 +464,37 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
             CommonVariables.Listener.SendMsg(clientModel.MDS_IP, clientModel.MDS_Port, messageStr, clientModel.ObjectID);
         }
 
-
-        public void HandlerMsgReturnData(string returnData,bool IsError)
+        public void HandlerMDSmsgReturnData(string returnData, bool IsError)
         {
             if (!string.IsNullOrEmpty(returnData))
             {
-                MsgRecordModel tempmodel=ExeingMsgRecordModels.Single(t => t.MsgID == returnData);
+                MsgRecordModel tempmodel = ExeingMsgRecordForMDS.Single(t => t.MsgID == returnData);
 
                 if (tempmodel != null)
                 {
                     if (IsError)
                     {
-                        GetUsingMsgRecordBuffer.Add(tempmodel);
+                        GetUsingMsgRecordBufferToMDS.Add(tempmodel);
                     }
-                    ExeingMsgRecordModels.Remove(ExeingMsgRecordModels.Single(t => t.MsgID == returnData));
+                    ExeingMsgRecordForMDS.Remove(tempmodel);
+                }
+            }
+        }
+
+
+        public void HandlerUAMsgReturnData(string returnData,bool IsError)
+        {
+            if (!string.IsNullOrEmpty(returnData))
+            {
+                MsgRecordModel tempmodel= ExeingMsgRecordForUA.Single(t => t.MsgID == returnData);
+
+                if (tempmodel != null)
+                {
+                    if (IsError)
+                    {
+                        GetUsingMsgRecordBufferToUA.Add(tempmodel);
+                    }
+                    ExeingMsgRecordForUA.Remove(tempmodel);
                 }
             }
         }

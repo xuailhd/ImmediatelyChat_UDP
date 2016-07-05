@@ -140,12 +140,12 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
         private string HandleMDSVerifyMCSMSG(string data,MDSListenerToken token)
         {
             string tempStr = data.Remove(0, CommonFlag.F_MDSVerifyMCSMSG.Length);
-            MsgRecordModel msgModel = CommonVariables.serializer.Deserialize<MsgRecordModel>(tempStr);
-            if (msgModel != null)
+            MsgRecord msgReocod = CommonVariables.serializer.Deserialize<MsgRecord>(tempStr);
+            if (msgReocod != null)
             {
-                if (!string.IsNullOrEmpty(msgModel.MsgSenderObjectID))
+                if (!string.IsNullOrEmpty(msgReocod.MsgSenderObjectID))
                 {
-                    MsgRecord msgReocod = CommonVariables.MessageContorl.AddMSgRecordIntoBuffer(msgModel);
+                    CommonVariables.MessageContorl.AddMSgRecordIntoBuffer(msgReocod);
 
                     foreach(MCSServer mcsServer in CommonVariables.MCSServers)
                     {
@@ -155,7 +155,7 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
                             break;
                         }
                     }
-                    return msgModel.MsgID;
+                    return msgReocod.MsgID;
                 }
             }
             return string.Empty;

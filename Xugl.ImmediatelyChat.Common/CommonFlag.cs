@@ -79,7 +79,9 @@ namespace Xugl.ImmediatelyChat.Common
 
 
         private static string f_UAVerifyUAInfo = "UAVerifyUAInfo";
+        private static string f_UAVerifyMCSMSG = "UAVerifyMCSMSG";
         public static string F_UAVerifyUAInfo { get { return f_UAVerifyUAInfo; } }
+        public static string F_UAVerifyMCSMSG { get { return f_UAVerifyMCSMSG; } }
 
         public static object lockobject = new object();
     }

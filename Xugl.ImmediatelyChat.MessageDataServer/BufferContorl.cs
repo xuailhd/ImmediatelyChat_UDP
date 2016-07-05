@@ -85,20 +85,9 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             return string.Empty;
         }
 
-        public MsgRecord AddMSgRecordIntoBuffer(MsgRecordModel msgRecordModel)
+        public void AddMSgRecordIntoBuffer(MsgRecord msgRecord)
         {
-            MsgRecord msgRecord = new MsgRecord();
-            msgRecord.MsgRecipientGroupID = msgRecordModel.MsgRecipientGroupID;
-            msgRecord.MsgContent = msgRecordModel.MsgContent;
-            msgRecord.MsgID = msgRecordModel.MsgID;
-            msgRecord.MsgRecipientObjectID = msgRecordModel.MsgRecipientObjectID;
-            msgRecord.MsgSenderName = msgRecordModel.MsgSenderName;
-            msgRecord.MsgSenderObjectID = msgRecordModel.MsgSenderObjectID;
-            msgRecord.MsgType = msgRecordModel.MsgType;
-            msgRecord.SendTime = msgRecordModel.SendTime;
             GetUsingMsgRecordBuffer.Add(msgRecord);
-
-            return msgRecord;
         }
 
 
