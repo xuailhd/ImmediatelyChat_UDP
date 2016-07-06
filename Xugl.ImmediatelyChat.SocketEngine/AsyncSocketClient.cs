@@ -171,7 +171,7 @@ namespace Xugl.ImmediatelyChat.SocketEngine
     //}
 
 
-    internal class AsyncClientToken:AsyncUserToken
+    public class AsyncClientToken:AsyncUserToken
     {
         public byte[] Buffer { get; set; }
 

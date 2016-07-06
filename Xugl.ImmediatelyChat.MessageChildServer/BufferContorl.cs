@@ -7,13 +7,13 @@ using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web.Script.Serialization;
 using Xugl.ImmediatelyChat.Common;
 using Xugl.ImmediatelyChat.Core;
 using Xugl.ImmediatelyChat.Core.DependencyResolution;
 using Xugl.ImmediatelyChat.IServices;
 using Xugl.ImmediatelyChat.Model;
 using Xugl.ImmediatelyChat.SocketEngine;
+using Newtonsoft.Json;
 
 namespace Xugl.ImmediatelyChat.MessageChildServer
 {
@@ -71,7 +71,7 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
 
             foreach (MsgRecordModel msgRecordModel in msgRecordModels)
             {
-                GetUsingMsgRecordBuffer.Add(msgRecordModel);
+                GetUsingMsgRecordBufferToMDS.Add(msgRecordModel);
             }
         }
 
@@ -326,7 +326,7 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
                             MsgRecordModel msgRecordModel = GetUnUsingMsgRecordBufferToMDS[0];
                             try
                             {
-                                string messageStr = CommonFlag.F_MDSVerifyMCSMSG + CommonVariables.serializer.Serialize(ModelTransfor(msgRecordModel));
+                                string messageStr = CommonFlag.F_MDSVerifyMCSMSG + JsonConvert.SerializeObject(ModelTransfor(msgRecordModel));
                                 //CommonVariables.LogTool.Log("begin send mds " + msgRecordModel.MDS_IP + " port:" + msgRecordModel.MDS_Port + messageStr);
                                 if( CommonVariables.Listener.SendMsg(msgRecordModel.MDS_IP, msgRecordModel.MDS_Port, messageStr, msgRecordModel.MsgID))
                                 {
@@ -366,9 +366,9 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
                             MsgRecordModel msgRecordModel = GetUnUsingMsgRecordBufferToUA[0];
                             try
                             {
-                                string messageStr = CommonFlag.F_UAVerifyMCSMSG + CommonVariables.serializer.Serialize(ModelTransfor(msgRecordModel));
+                                string messageStr = CommonFlag.F_UAVerifyMCSMSG + JsonConvert.SerializeObject(ModelTransfor(msgRecordModel));
                                 //CommonVariables.LogTool.Log("begin send mds " + msgRecordModel.MDS_IP + " port:" + msgRecordModel.MDS_Port + messageStr);
-                                if (CommonVariables.Listener.SendMsg(msgRecordModel.Client_IP, msgRecordModel.Client_port, messageStr, msgRecordModel.MsgID))
+                                if (CommonVariables.Listener.SendMsg(msgRecordModel.Client_IP, msgRecordModel.Client_Port, messageStr, msgRecordModel.MsgID))
                                 {
                                     msgRecordModel.ExeSendTime = DateTime.Now.ToString(CommonFlag.F_DateTimeFormat);
                                     msgRecordModel.reTryCount = msgRecordModel.reTryCount + 1;
@@ -423,13 +423,11 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
                             }
                         }
 
-
                         IList<MsgRecordModel> needdelete2 = (from aa in tempmodels
-                                                             join bb in tempclientModels on aa.MsgRecipientObjectID equals bb.ObjectID into cc
-                                                             from temp in cc.DefaultIfEmpty()
-                                                             where temp == null
+                                                             join bb in tempclientModels on aa.MsgRecipientObjectID equals bb.ObjectID 
                                                              select aa).ToList();
 
+                
 
                         if (needdelete2 != null && needdelete2.Count > 0)
                         {
@@ -438,15 +436,34 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
                                 foreach (MsgRecordModel tempmodel in needdelete2)
                                 {
                                     ExeingMsgRecordForUA.Remove(tempmodel);
-                                    if (tempmodel.reTryCount < 3)
-                                    {
-                                        GetUsingMsgRecordBufferToUA.Add(tempmodel);
-                                    }
                                 }
                             }
                         }
 
-                        foreach()
+                        needdelete2 = (from aa in tempmodels
+                                       join bb in tempclientModels on aa.MsgRecipientObjectID equals bb.ObjectID into cc
+                                       from temp in cc.DefaultIfEmpty()
+                                       where temp == null
+                                       select aa).ToList();
+
+                        if (needdelete2 != null && needdelete2.Count > 0)
+                        {
+                            foreach (MsgRecordModel tempmodel in needdelete2)
+                            {
+                                ExeingMsgRecordForUA.Remove(tempmodel);
+                                if (tempmodel.reTryCount < 3)
+                                {
+                                    if (clientModels.ContainsKey(tempmodel.MsgRecipientObjectID))
+                                    {
+                                        tempmodel.Client_IP = clientModels[tempmodel.MsgRecipientObjectID].Client_IP;
+                                        tempmodel.Client_Port = clientModels[tempmodel.MsgRecipientObjectID].Client_Port;
+                                    }
+                                    GetUsingMsgRecordBufferToUA.Add(tempmodel);
+                                }
+                            }
+                        }
+
+
                     }
                     Thread.Sleep(_sendDelay);
                 }
@@ -460,7 +477,7 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
 
         public void SendGetMsgToMDS(ClientModel clientModel)
         {
-            string messageStr = CommonFlag.F_MDSVerifyMCSGetMSG + CommonVariables.serializer.Serialize(clientModel);
+            string messageStr = CommonFlag.F_MDSVerifyMCSGetMSG + JsonConvert.SerializeObject(clientModel);
             CommonVariables.Listener.SendMsg(clientModel.MDS_IP, clientModel.MDS_Port, messageStr, clientModel.ObjectID);
         }
 

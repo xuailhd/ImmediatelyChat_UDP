@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -45,7 +46,7 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
         }
     }
 
-    internal class UDPSocketListener : AsyncSocketListenerUDP<MCSListenerUDPToken>
+    public class UDPSocketListener : AsyncSocketListenerUDP<MCSListenerUDPToken>
     {
         public UDPSocketListener()
             : base(1024, 100,10, CommonVariables.LogTool)
@@ -127,7 +128,7 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
         {
             string tempStr = data.Remove(0, CommonFlag.F_MCSVerfiyMDSMSG.Length);
 
-            MsgRecord tempMsgRecord = CommonVariables.serializer.Deserialize<MsgRecord>(tempStr);
+            MsgRecord tempMsgRecord = JsonConvert.DeserializeObject<MsgRecord>(tempStr);
             if (tempMsgRecord != null)
             {
                 if (!string.IsNullOrEmpty(tempMsgRecord.MsgID))
@@ -142,12 +143,12 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
         private string HandlePSCallMCSStart(string data, MCSListenerUDPToken token)
         {
             data = data.Remove(0, CommonFlag.F_PSCallMCSStart.Length);
-            IList<MDSServer> mdsServers = CommonVariables.serializer.Deserialize<IList<MDSServer>>(data.Substring(0, data.IndexOf("&&")));
+            IList<MDSServer> mdsServers = JsonConvert.DeserializeObject<IList<MDSServer>>(data.Substring(0, data.IndexOf("&&")));
 
             if (mdsServers != null && mdsServers.Count > 0)
             {
                 data = data.Remove(0, data.IndexOf("&&") + 2);
-                CommonVariables.ArrangeStr = CommonVariables.serializer.Deserialize<MCSServer>(data).ArrangeStr;
+                CommonVariables.ArrangeStr = JsonConvert.DeserializeObject<MCSServer>(data).ArrangeStr;
                 CommonVariables.OperateFile.SaveConfig(CommonVariables.ConfigFilePath, CommonFlag.F_ArrangeChars, CommonVariables.ArrangeStr);
                 CommonVariables.LogTool.Log("ArrangeStr:" + CommonVariables.ArrangeStr);
                 CommonVariables.LogTool.Log("MDS count:" + mdsServers.Count);
@@ -170,7 +171,7 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
         private string HandleMCSVerifyUA(string data, MCSListenerUDPToken token)
         {
             string tempStr = data.Remove(0, CommonFlag.F_MCSVerifyUA.Length);
-            ClientModel clientModel = CommonVariables.serializer.Deserialize<ClientModel>(tempStr);
+            ClientModel clientModel = JsonConvert.DeserializeObject<ClientModel>(tempStr);
             if (clientModel != null)
             {
                 if (!string.IsNullOrEmpty(clientModel.ObjectID))
@@ -194,7 +195,7 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
 
         private string HandleMCSReceiveMMSUAUpdateTime(string data, MCSListenerUDPToken token)
         {
-            ClientModel clientModel = CommonVariables.serializer.Deserialize<ClientModel>(data.Remove(0, CommonFlag.F_MCSReceiveMMSUAUpdateTime.Length));
+            ClientModel clientModel = JsonConvert.DeserializeObject<ClientModel>(data.Remove(0, CommonFlag.F_MCSReceiveMMSUAUpdateTime.Length));
             ContactPerson contactPerson = token.ContactPersonService.FindContactPerson(clientModel.ObjectID);
 
             if (contactPerson == null)
@@ -211,7 +212,7 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
 
         private string HandleMCSReceiveUAInfo(string data, MCSListenerUDPToken token)
         {
-            ContactData contactData = CommonVariables.serializer.Deserialize<ContactData>(data.Remove(0, CommonFlag.F_MCSVerifyUAInfo.Length));
+            ContactData contactData = JsonConvert.DeserializeObject<ContactData>(data.Remove(0, CommonFlag.F_MCSVerifyUAInfo.Length));
 
             if (string.IsNullOrEmpty(contactData.ContactDataID))
             {
@@ -224,7 +225,7 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
         private string HandleMCSVerifyUAMSG(string data, MCSListenerUDPToken token)
         {
             string tempStr = data.Remove(0, CommonFlag.F_MCSVerifyUAMSG.Length);
-            MsgRecordModel msgModel = CommonVariables.serializer.Deserialize<MsgRecordModel>(tempStr);
+            MsgRecordModel msgModel = JsonConvert.DeserializeObject<MsgRecordModel>(tempStr);
 
             if (msgModel != null)
             {
@@ -240,7 +241,7 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
         private string HandleMCSVerifyUAGetMSG(string data, MCSListenerUDPToken token)
         {
             string tempStr = data.Remove(0, CommonFlag.F_MCSVerifyUAGetMSG.Length);
-            ClientModel clientModel = CommonVariables.serializer.Deserialize<ClientModel>(tempStr);
+            ClientModel clientModel = JsonConvert.DeserializeObject<ClientModel>(tempStr);
             if (clientModel != null)
             {
                 if (!string.IsNullOrEmpty(clientModel.ObjectID))

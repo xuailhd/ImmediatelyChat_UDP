@@ -8,7 +8,6 @@ using System.ServiceModel.Channels;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web.Script.Serialization;
 using Xugl.ImmediatelyChat.Common;
 using Xugl.ImmediatelyChat.Core;
 
