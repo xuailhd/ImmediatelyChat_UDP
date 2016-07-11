@@ -42,22 +42,6 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
 
         public static string ArrangeStr { get; set; }
 
-        #region JavaScriptSerializer
-
-        public static JavaScriptSerializer serializer
-        {
-            get
-            {
-                if (Singleton<JavaScriptSerializer>.Instance == null)
-                {
-                    Singleton<JavaScriptSerializer>.Instance = new JavaScriptSerializer();
-                }
-
-                return Singleton<JavaScriptSerializer>.Instance;
-            }
-        }
-        #endregion
-
         #region MCSServers
 
         public static IList<MCSServer> MCSServers
@@ -85,19 +69,6 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
         }
 
         #endregion
-
-
-        public static IContactPersonService ContactPersonService
-        {
-            get
-            {
-                if (Singleton<IContactPersonService>.Instance == null)
-                {
-                    Singleton<IContactPersonService>.Instance = Xugl.ImmediatelyChat.Core.DependencyResolution.ObjectContainerFactory.CurrentContainer.Resolver<IContactPersonService>();
-                }
-                return Singleton<IContactPersonService>.Instance;
-            }
-        }
 
         #region  OperateFile
         public static IOperateFile OperateFile
@@ -139,18 +110,16 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
             }
         }
 
-        public static SyncSocketClientUDP SyncSocketClientIntance
+        public static UDPSocketListener Listener
         {
             get
             {
-                if (Singleton<SyncSocketClientUDP>.Instance == null)
+                if (Singleton<UDPSocketListener>.Instance == null)
                 {
-                    Singleton<SyncSocketClientUDP>.Instance = new SyncSocketClientUDP();
+                    Singleton<UDPSocketListener>.Instance = new UDPSocketListener();
                 }
-
-                return Singleton<SyncSocketClientUDP>.Instance;
+                return Singleton<UDPSocketListener>.Instance;
             }
         }
-
     }
 }

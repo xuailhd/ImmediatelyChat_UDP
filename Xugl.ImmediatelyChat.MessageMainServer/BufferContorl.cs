@@ -24,37 +24,54 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
         private readonly IContactPersonService contactPersonService;
 
         private int _maxSize = 1024;
-        private int _maxConnnections = 10;
-        private IList<ContactDataWithServer> contactDataBuffer1 = new List<ContactDataWithServer>();
-        private IList<ContactDataWithServer> contactDataBuffer2 = new List<ContactDataWithServer>();
-        private bool UsingTagForcontactData = false;
+        private IList<ContactDataWithServer> contactDataToUABuffer1 = new List<ContactDataWithServer>();
+        private IList<ContactDataWithServer> contactDataToUABuffer2 = new List<ContactDataWithServer>();
+        private bool UsingTagForUA = false;
 
-        private IList<ContactDataWithServer> exeContactDataBuffer = new List<ContactDataWithServer>();
 
-        private AsyncSocketClientUDP sendContactDataClient;
+        private IList<ContactDataWithServer> contactDataToMCSBuffer1 = new List<ContactDataWithServer>();
+        private IList<ContactDataWithServer> contactDataToMCSBuffer2 = new List<ContactDataWithServer>();
+        private bool UsingTagForMCS = false;
+
+        private IList<ContactDataWithServer> exeContactDataToUABuffer = new List<ContactDataWithServer>();
+        private IList<ContactDataWithServer> exeContactDataToMCSBuffer = new List<ContactDataWithServer>();
         private int sendContactDataDelay = 100;
-
-        private IList<ContactDataWithServer> GetUsingContactDataBuffer
+        
+        #region buffer manager
+        private IList<ContactDataWithServer> GetUsingContactDataToUABuffer
         {
             get
             {
-                return UsingTagForcontactData ? contactDataBuffer1 : contactDataBuffer2;
+                return UsingTagForUA ? contactDataToUABuffer1 : contactDataToUABuffer2;
             }
         }
 
-        private IList<ContactDataWithServer> GetUnUsingContactDataBuffer
+        private IList<ContactDataWithServer> GetUnUsingContactDataToUABuffer
         {
             get
             {
-                return UsingTagForcontactData ? contactDataBuffer2 : contactDataBuffer1;
+                return UsingTagForUA ? contactDataToUABuffer2 : contactDataToUABuffer1;
             }
         }
+
+        private IList<ContactDataWithServer> GetUsingContactDataToMCSBuffer
+        {
+            get
+            {
+                return UsingTagForMCS ? contactDataToMCSBuffer1 : contactDataToMCSBuffer2;
+            }
+        }
+
+        private IList<ContactDataWithServer> GetUnUsingContactDataToMCSBuffer
+        {
+            get
+            {
+                return UsingTagForMCS ? contactDataToMCSBuffer2 : contactDataToMCSBuffer1;
+            }
+        }
+        #endregion
 
         public bool IsRunning = false;
-        public BufferContorl()
-        {
-            contactPersonService = ObjectContainerFactory.CurrentContainer.Resolver<IContactPersonService>();
-        }
 
         public void StopMainThread()
         {

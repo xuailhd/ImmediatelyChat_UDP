@@ -4,29 +4,49 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xugl.ImmediatelyChat.Common;
+using Xugl.ImmediatelyChat.Core.DependencyResolution;
 using Xugl.ImmediatelyChat.IServices;
 using Xugl.ImmediatelyChat.Model;
 using Xugl.ImmediatelyChat.SocketEngine;
 
 namespace Xugl.ImmediatelyChat.MessageMainServer
 {
-    internal class UDPSocketListener : AsyncSocketListenerUDP<MMSListenerToken>
+    public class MMSListenerUDPToken : AsyncUserToken
     {
-        public UDPSocketListener()
-            : base(1024, 10, CommonVariables.LogTool)
+        private readonly IContactPersonService _contactPersonService;
+
+        public MMSListenerUDPToken()
         {
+            _contactPersonService = ObjectContainerFactory.CurrentContainer.Resolver<IContactPersonService>();
         }
 
-        protected override void HandleError(MMSListenerToken token)
+        public ContactData Model { get; set; }
+
+        public string UAObjectID { get; set; }
+
+        public IContactPersonService ContactPersonService
         {
-            if (token.Models != null && token.Models.Count > 0)
+            get
             {
-                token.Models.Clear();
-                token.Models = null;
+                return _contactPersonService;
             }
         }
+    }
 
-        protected override string HandleRecivedMessage(string inputMessage, MMSListenerToken token)
+
+    internal class UDPSocketListener : AsyncSocketListenerUDP<MMSListenerUDPToken>
+    {
+        public UDPSocketListener()
+            : base(1024,100, 20, CommonVariables.LogTool)
+        {
+        }
+
+        protected override void HandleError(MMSListenerUDPToken token)
+        {
+
+        }
+
+        protected override string HandleRecivedMessage(string inputMessage, MMSListenerUDPToken token)
         {
             if (string.IsNullOrEmpty(inputMessage) || token == null)
             {
@@ -49,7 +69,6 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
 
                 if (CommonVariables.IsBeginMessageService)
                 {
-                    CommonVariables.LogTool.Log("receive UA data:" + data);
                     //UA
                     if (data.StartsWith(CommonFlag.F_MMSVerifyUA))
                     {
@@ -95,7 +114,7 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
         }
 
 
-        private string HandleMMSVerifyUAAddGroup(string data, MMSListenerToken token)
+        private string HandleMMSVerifyUAAddGroup(string data, MMSListenerUDPToken token)
         {
             ClientAddGroup model = CommonVariables.serializer.Deserialize<ClientAddGroup>(data.Remove(0, CommonFlag.F_MMSVerifyUAAddGroup.Length));
 
@@ -256,7 +275,7 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
         }
 
 
-        private string HandleMMSVerifyUAAddPerson(string data, MMSListenerToken token)
+        private string HandleMMSVerifyUAAddPerson(string data, MMSListenerUDPToken token)
         {
             ClientAddPerson model = CommonVariables.serializer.Deserialize<ClientAddPerson>(data.Remove(0, CommonFlag.F_MMSVerifyUAAddPerson.Length));
             if (model != null && !string.IsNullOrEmpty(model.ObjectID))
@@ -321,7 +340,7 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
             return string.Empty;
         }
 
-        private string HandlePSSendMMSUser(string data, MMSListenerToken token)
+        private string HandlePSSendMMSUser(string data, MMSListenerUDPToken token)
         {
             ContactPerson contactPerson = CommonVariables.serializer.Deserialize<ContactPerson>(data.Remove(0, CommonFlag.F_PSSendMMSUser.Length));
             if (contactPerson != null && !string.IsNullOrEmpty(contactPerson.ObjectID))
@@ -337,7 +356,7 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
             return "failed";
         }
 
-        private string HandleMMSVerifyUAFBSearch(string data, MMSListenerToken token)
+        private string HandleMMSVerifyUAFBSearch(string data, MMSListenerUDPToken token)
         {
             string contactDataID = data.Remove(0, CommonFlag.F_MMSVerifyUAFBSearch.Length);
             CommonVariables.LogTool.Log("UA F_MMSVerifyUAFBSearch:" + contactDataID);
@@ -353,7 +372,7 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
             return CommonVariables.serializer.Serialize(token.Models[0]);
         }
 
-        private string HandleMMSVerifyUASearch(string data, MMSListenerToken token)
+        private string HandleMMSVerifyUASearch(string data, MMSListenerUDPToken token)
         {
             ClientSearchModel clientSearchModel = CommonVariables.serializer.Deserialize<ClientSearchModel>(data.Remove(0, CommonFlag.F_MMSVerifyUASearch.Length));
             if (clientSearchModel != null && !string.IsNullOrEmpty(clientSearchModel.ObjectID))
@@ -381,7 +400,7 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
             return string.Empty;
         }
 
-        private string HandleMMSVerifyFBUAGetUAInfo(string data, MMSListenerToken token)
+        private string HandleMMSVerifyFBUAGetUAInfo(string data, MMSListenerUDPToken token)
         {
             string contactDataID = data.Remove(0, CommonFlag.F_MMSVerifyFBUAGetUAInfo.Length);
             if (token.Models[0].ContactDataID != contactDataID)
@@ -396,7 +415,7 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
             return CommonVariables.serializer.Serialize(token.Models[0]);
         }
 
-        private string HandleMMSVerifyUAGetUAInfo(string data, MMSListenerToken token)
+        private string HandleMMSVerifyUAGetUAInfo(string data, MMSListenerUDPToken token)
         {
             ClientModel clientStatusModel = CommonVariables.serializer.Deserialize<ClientModel>(data.Remove(0, CommonFlag.F_MMSVerifyUAGetUAInfo.Length));
 
@@ -418,7 +437,7 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
             return string.Empty;
         }
 
-        private string HandleMMSVerifyUA(string data, MMSListenerToken token)
+        private string HandleMMSVerifyUA(string data, MMSListenerUDPToken token)
         {
             ContactPerson tempContactPerson = null;
             ClientModel clientStatusModel = CommonVariables.serializer.Deserialize<ClientModel>(data.Remove(0, CommonFlag.F_MMSVerifyUA.Length));

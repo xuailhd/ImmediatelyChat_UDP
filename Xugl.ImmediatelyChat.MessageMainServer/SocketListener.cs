@@ -17,27 +17,27 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
 {
 
 
-    public class MMSListenerToken : AsyncUserToken
-    {
-        private readonly IContactPersonService _contactPersonService;
+    //public class MMSListenerToken : AsyncUserToken
+    //{
+    //    private readonly IContactPersonService _contactPersonService;
 
-        public MMSListenerToken()
-        {
-            _contactPersonService=ObjectContainerFactory.CurrentContainer.Resolver<IContactPersonService>();
-        }
+    //    public MMSListenerToken()
+    //    {
+    //        _contactPersonService=ObjectContainerFactory.CurrentContainer.Resolver<IContactPersonService>();
+    //    }
 
-        public IList<ContactData> Models { get; set; }
+    //    public IList<ContactData> Models { get; set; }
 
-        public string UAObjectID { get; set; }
+    //    public string UAObjectID { get; set; }
 
-        public IContactPersonService ContactPersonService
-        {
-            get
-            {
-                return _contactPersonService;
-            }
-        }
-    }
+    //    public IContactPersonService ContactPersonService
+    //    {
+    //        get
+    //        {
+    //            return _contactPersonService;
+    //        }
+    //    }
+    //}
 
     //internal class SocketListener : AsyncSocketListener<MMSListenerToken>
     //{

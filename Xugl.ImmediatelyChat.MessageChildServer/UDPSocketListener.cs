@@ -49,7 +49,7 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
     public class UDPSocketListener : AsyncSocketListenerUDP<MCSListenerUDPToken>
     {
         public UDPSocketListener()
-            : base(1024, 100,10, CommonVariables.LogTool)
+            : base(1024, 100, 20, CommonVariables.LogTool)
         {
         }
 
