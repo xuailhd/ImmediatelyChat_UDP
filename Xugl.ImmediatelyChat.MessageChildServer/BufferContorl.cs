@@ -43,16 +43,6 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
         private IList<MsgRecordModel> ExeingMsgRecordForMDS = new List<MsgRecordModel>();
         private IList<MsgRecordModel> ExeingMsgRecordForUA = new List<MsgRecordModel>();
 
-        /// <summary>
-        /// message Buffer, use to send to UA
-        /// </summary>
-        private static IDictionary<string, IList<MsgRecord>> OutMsgRecords = new Dictionary<string, IList<MsgRecord>>();
-        //private IDictionary<string, IList<MsgRecord>> OutMsgRecords2 = new Dictionary<string, IList<MsgRecord>>();
-        ////for loop and delete
-        //private IList<string> OutMsgRecordKeys1 = new List<string>();
-        //private IList<string> OutMsgRecordKeys2 = new List<string>();
-        //private bool UsingTagForOutMsg = false;
-
         private IDictionary<string, ClientModel> clientModels = new Dictionary<string, ClientModel>();
 
         private const int _maxSize = 1024;
@@ -60,6 +50,8 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
         private const int _maxGetConnections = 10;
         private const int _sendDelay = 200;
         private const int _getDelay = 5000;
+        private const int _handlerError = 1000;
+        private const int reTryCount = 3;
 
         public bool IsRunning = false;
 
@@ -216,6 +208,8 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
             if (clientModels.ContainsKey(clientModel.ObjectID))
             {
                 clientModels[clientModel.ObjectID].LatestTime = DateTime.Now.ToString(CommonFlag.F_DateTimeFormat);
+                clientModels[clientModel.ObjectID].Client_IP = clientModel.Client_IP;
+                clientModels[clientModel.ObjectID].Client_Port = clientModel.Client_Port;
             }
             else
             {
@@ -231,35 +225,12 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
                 {
                     clientModels[msgRecord.MsgRecipientObjectID].LatestTime = msgRecord.SendTime;
                 }
-            }
 
-            if (OutMsgRecords.ContainsKey(msgRecord.MsgRecipientObjectID))
-            {
-                if (!(OutMsgRecords[msgRecord.MsgRecipientObjectID].Where(t => t.MsgID == msgRecord.MsgID).Count() > 0))
-                {
-                    OutMsgRecords[msgRecord.MsgRecipientObjectID].Add(msgRecord);
-                }
+                MsgRecordModel msgRecordModel = ModelTransfor(msgRecord);
+                msgRecordModel.Client_IP = clientModels[msgRecord.MsgRecipientObjectID].Client_IP;
+                msgRecordModel.Client_Port = clientModels[msgRecord.MsgRecipientObjectID].Client_Port;
+                GetUsingMsgRecordBufferToUA.Add(msgRecordModel);
             }
-            else
-            {
-                OutMsgRecords.Add(msgRecord.MsgRecipientObjectID, new List<MsgRecord>());
-                OutMsgRecords[msgRecord.MsgRecipientObjectID].Add(msgRecord);
-            }
-        }
-
-        public IList<MsgRecord> GetMSG(ClientModel clientModel)
-        {
-            if (OutMsgRecords.ContainsKey(clientModel.ObjectID))
-            {
-                IList<MsgRecord> msgRecords = OutMsgRecords[clientModel.ObjectID].Where(t => t.SendTime.CompareTo(clientModel.LatestTime) > 0).ToList();
-
-                if(msgRecords!=null && msgRecords.Count>0)
-                {
-                    OutMsgRecords[clientModel.ObjectID].Clear();
-                    return msgRecords;
-                }
-            }
-            return null;
         }
 
         public void StartMainThread()
@@ -397,9 +368,21 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
             {
                 while (IsRunning)
                 {
+                    IList<ClientModel> tempclientModels = clientModels.Values.Where(t => t.LatestTime.CompareTo(DateTime.Now.AddSeconds(-10)
+                        .ToString(CommonFlag.F_DateTimeFormat)) < 0).ToList();
+
+                    if (tempclientModels != null && tempclientModels.Count > 0)
+                    {
+                        foreach (ClientModel clientModel in tempclientModels)
+                        {
+                            clientModels.Remove(clientModel.ObjectID);
+                        }
+                    }
+
+                    #region UA msg
                     if (ExeingMsgRecordForUA.Count > 0)
                     {
-                        IList<MsgRecordModel> needdelete1 = ExeingMsgRecordForUA.Where(t => t.reTryCount > 3).ToList();
+                        IList<MsgRecordModel> needdelete1 = ExeingMsgRecordForUA.Where(t => t.reTryCount > reTryCount).ToList();
 
                         if(needdelete1!=null && needdelete1.Count>0)
                         {
@@ -410,24 +393,13 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
                         }
 
                         IList<MsgRecordModel> tempmodels = ExeingMsgRecordForUA.Where(t => t.ExeSendTime.CompareTo(DateTime.Now.AddSeconds(-3)
-                            .ToString(CommonFlag.F_DateTimeFormat)) < 0 && t.reTryCount <= 3).ToList();
+                            .ToString(CommonFlag.F_DateTimeFormat)) < 0 && t.reTryCount <= reTryCount).ToList();
 
-                        IList<ClientModel> tempclientModels = clientModels.Values.Where(t => t.LatestTime.CompareTo(DateTime.Now.AddSeconds(-10)
-                            .ToString(CommonFlag.F_DateTimeFormat)) < 0).ToList();
-
-                        if(tempclientModels!=null && tempclientModels.Count>0)
-                        {
-                            foreach (ClientModel clientModel in tempclientModels)
-                            {
-                                clientModels.Remove(clientModel.ObjectID);
-                            }
-                        }
 
                         IList<MsgRecordModel> needdelete2 = (from aa in tempmodels
                                                              join bb in tempclientModels on aa.MsgRecipientObjectID equals bb.ObjectID 
                                                              select aa).ToList();
 
-                
 
                         if (needdelete2 != null && needdelete2.Count > 0)
                         {
@@ -451,7 +423,7 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
                             foreach (MsgRecordModel tempmodel in needdelete2)
                             {
                                 ExeingMsgRecordForUA.Remove(tempmodel);
-                                if (tempmodel.reTryCount < 3)
+                                if (tempmodel.reTryCount < reTryCount)
                                 {
                                     if (clientModels.ContainsKey(tempmodel.MsgRecipientObjectID))
                                     {
@@ -462,10 +434,52 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
                                 }
                             }
                         }
-
-
                     }
-                    Thread.Sleep(_sendDelay);
+                    #endregion
+
+                    #region MDS msg
+                    if (ExeingMsgRecordForMDS.Count > 0)
+                    {
+                        IList<MsgRecordModel> needdelete1 = ExeingMsgRecordForMDS.Where(t => t.reTryCount > 3).ToList();
+
+                        if (needdelete1 != null && needdelete1.Count > 0)
+                        {
+                            foreach (MsgRecordModel tempmodel in needdelete1)
+                            {
+                                ExeingMsgRecordForMDS.Remove(tempmodel);
+                            }
+                        }
+
+                        IList<MsgRecordModel> needdelete2 = ExeingMsgRecordForMDS.Where(t => t.ExeSendTime.CompareTo(DateTime.Now.AddSeconds(-3)
+                            .ToString(CommonFlag.F_DateTimeFormat)) < 0 && t.reTryCount <= reTryCount).ToList();
+
+
+                        if (needdelete2 != null && needdelete2.Count > 0)
+                        {
+                            for (int i = 0; i < needdelete2.Count; i++)
+                            {
+                                foreach (MsgRecordModel tempmodel in needdelete2)
+                                {
+                                    ExeingMsgRecordForMDS.Remove(tempmodel);
+                                }
+                            }
+                        }
+
+                        if (needdelete2 != null && needdelete2.Count > 0)
+                        {
+                            foreach (MsgRecordModel tempmodel in needdelete2)
+                            {
+                                ExeingMsgRecordForUA.Remove(tempmodel);
+                                if (tempmodel.reTryCount < reTryCount)
+                                {
+                                    GetUsingMsgRecordBufferToMDS.Add(tempmodel);
+                                }
+                            }
+                        }
+                    }
+                    #endregion
+
+                    Thread.Sleep(_handlerError);
                 }
             }
             catch (Exception ex)
@@ -489,9 +503,13 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
 
                 if (tempmodel != null)
                 {
+                    tempmodel.reTryCount = tempmodel.reTryCount + 1;
                     if (IsError)
                     {
-                        GetUsingMsgRecordBufferToMDS.Add(tempmodel);
+                        if (tempmodel.reTryCount <= 3)
+                        {
+                            GetUsingMsgRecordBufferToMDS.Add(tempmodel);
+                        }
                     }
                     ExeingMsgRecordForMDS.Remove(tempmodel);
                 }
