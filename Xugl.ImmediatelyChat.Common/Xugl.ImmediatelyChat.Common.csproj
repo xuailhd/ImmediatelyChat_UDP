@@ -41,9 +41,17 @@
   <ItemGroup>
     <Compile Include="CommonFlag.cs" />
     <Compile Include="CommonLog.cs" />
+    <Compile Include="CommonFunctions.cs" />
+    <Compile Include="ICommonFunctions.cs" />
     <Compile Include="ICommonLog.cs" />
     <Compile Include="Models.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Xugl.ImmediatelyChat.Domain\Xugl.ImmediatelyChat.Domain.csproj">
+      <Project>{0e1fdc46-9e8c-4fd8-a73c-ce9a7aad622d}</Project>
+      <Name>Xugl.ImmediatelyChat.Domain</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

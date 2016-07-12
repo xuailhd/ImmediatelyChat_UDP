@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -24,63 +25,79 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
         private readonly IContactPersonService contactPersonService;
 
         private int _maxSize = 1024;
-        private IList<ContactDataWithServer> contactDataToUABuffer1 = new List<ContactDataWithServer>();
-        private IList<ContactDataWithServer> contactDataToUABuffer2 = new List<ContactDataWithServer>();
-        private bool UsingTagForUA = false;
+        private IList<ContactDataWithServer> contactDataBuffer1 = new List<ContactDataWithServer>();
+        private IList<ContactDataWithServer> contactDataBuffer2 = new List<ContactDataWithServer>();
+        private bool UsingTag = false;
 
+        private IList<ContactDataWithServer> exeContactDataBuffer = new List<ContactDataWithServer>();
+        private IDictionary<string, ClientModel> clientModels = new Dictionary<string, ClientModel>();
 
-        private IList<ContactDataWithServer> contactDataToMCSBuffer1 = new List<ContactDataWithServer>();
-        private IList<ContactDataWithServer> contactDataToMCSBuffer2 = new List<ContactDataWithServer>();
-        private bool UsingTagForMCS = false;
-
-        private IList<ContactDataWithServer> exeContactDataToUABuffer = new List<ContactDataWithServer>();
-        private IList<ContactDataWithServer> exeContactDataToMCSBuffer = new List<ContactDataWithServer>();
         private int sendContactDataDelay = 100;
-        
+        public bool IsRunning = false;
+
+
+
         #region buffer manager
-        private IList<ContactDataWithServer> GetUsingContactDataToUABuffer
+        private IList<ContactDataWithServer> GetUsingContactDataBuffer
         {
             get
             {
-                return UsingTagForUA ? contactDataToUABuffer1 : contactDataToUABuffer2;
+                return UsingTag ? contactDataBuffer1 : contactDataBuffer2;
             }
         }
 
-        private IList<ContactDataWithServer> GetUnUsingContactDataToUABuffer
+        private IList<ContactDataWithServer> GetUnUsingContactDataBuffer
         {
             get
             {
-                return UsingTagForUA ? contactDataToUABuffer2 : contactDataToUABuffer1;
+                return UsingTag ? contactDataBuffer2 : contactDataBuffer1;
             }
         }
 
-        private IList<ContactDataWithServer> GetUsingContactDataToMCSBuffer
+        private IList<ContactDataWithServer> GetExeContactDataBuffer
         {
             get
             {
-                return UsingTagForMCS ? contactDataToMCSBuffer1 : contactDataToMCSBuffer2;
-            }
-        }
-
-        private IList<ContactDataWithServer> GetUnUsingContactDataToMCSBuffer
-        {
-            get
-            {
-                return UsingTagForMCS ? contactDataToMCSBuffer2 : contactDataToMCSBuffer1;
+                return exeContactDataBuffer;
             }
         }
         #endregion
 
-        public bool IsRunning = false;
+        public void UpdateClientModel(ClientModel clientModel)
+        {
+            if(clientModels.ContainsKey(clientModel.ObjectID))
+            {
+                clientModels[clientModel.ObjectID].Client_IP = clientModel.Client_IP;
+                clientModels[clientModel.ObjectID].Client_Port = clientModel.Client_Port;
+                if(string.IsNullOrEmpty(clientModels[clientModel.ObjectID].MCS_IP))
+                {
+                    MCSServer server = CommonVariables.CommonFunctions.FindMCSServer(CommonVariables.MCSServers, clientModel.ObjectID);
+                    clientModels[clientModel.ObjectID].MCS_IP = server.MCS_IP;
+                    clientModels[clientModel.ObjectID].MCS_Port = server.MCS_Port;
+                }
+            }
+            else
+            {
+                if(string.IsNullOrEmpty(clientModel.MCS_IP))
+                {
+                    MCSServer server = CommonVariables.CommonFunctions.FindMCSServer(CommonVariables.MCSServers, clientModel.ObjectID);
+                    clientModel.MCS_IP = server.MCS_IP;
+                    clientModel.MCS_Port = server.MCS_Port;
+                }
+
+                clientModels.Add(clientModel.ObjectID, clientModel);
+            }
+        }
+
 
         public void StopMainThread()
         {
             IsRunning = false;
         }
 
-        public void AddContactDataIntoBuffer(IList<ContactData> contactDatas,string  serverIP,int port,int serverType)
+        public void AddContactDataIntoBuffer(IList<ContactData> contactDatas,string  serverIP,int port,ServerType serverType)
         {
-            ContactDataWithServer contactDataWithServer = new ContactDataWithServer();
+            ContactDataWithServer contactDataWithServer;
 
             if(string.IsNullOrEmpty(serverIP))
             {
@@ -92,39 +109,54 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                 return;
             }
 
-            for(int i =0; i <contactDatas.Count;i++)
+            for (int i = 0; i < contactDatas.Count; i++)
             {
-
+                contactDataWithServer = new ContactDataWithServer();
+                contactDataWithServer.ContactData = contactDatas[i];
+                contactDataWithServer.ServerIP = serverIP;
+                contactDataWithServer.ServerPort = port;
+                contactDataWithServer.ServerType = serverType;
+                GetUsingContactDataBuffer.Add(contactDataWithServer);
             }
         }
 
         public void SendContactDataThread()
         {
-            sendContactDataClient = new AsyncSocketClientUDP(_maxSize, _maxConnnections, CommonVariables.LogTool);
             ContactDataWithServer contactDataWithServer;
             while (IsRunning)
             {
                 if(GetUsingContactDataBuffer.Count>0)
                 {
-                    UsingTagForcontactData = !UsingTagForcontactData;
+                    UsingTag = !UsingTag;
                     while(GetUnUsingContactDataBuffer.Count>0) 
                     {
                         contactDataWithServer = GetUnUsingContactDataBuffer[0];
                         switch (contactDataWithServer.ServerType)
                         {
-                            case 1:
-                                sendContactDataClient.SendMsg(contactDataWithServer.ServerIP, contactDataWithServer.ServerPort,
-                                    CommonFlag.F_UAVerifyUAInfo + CommonVariables.serializer.Serialize(contactDataWithServer.ContactData),
-                                    contactDataWithServer.ContactData.ContactDataID, HandlerSendContactDataReturnData);
+                            case ServerType.UA:
+                                CommonVariables.Listener.SendMsg(contactDataWithServer.ServerIP, contactDataWithServer.ServerPort,
+                                    CommonFlag.F_UAVerifyUAInfo + JsonConvert.SerializeObject(contactDataWithServer.ContactData),
+                                    contactDataWithServer.ContactData.ContactDataID);
                                 break;
-                            case 2:
-                                sendContactDataClient.SendMsg(contactDataWithServer.ServerIP, contactDataWithServer.ServerPort,
-                                    CommonFlag.F_MCSVerifyUAInfo + CommonVariables.serializer.Serialize(contactDataWithServer.ContactData),
-                                    contactDataWithServer.ContactData.ContactDataID, HandlerSendContactDataReturnData);
+                            case ServerType.MCS:
+                                CommonVariables.Listener.SendMsg(contactDataWithServer.ServerIP, contactDataWithServer.ServerPort,
+                                    CommonFlag.F_MCSVerifyUAInfo + JsonConvert.SerializeObject(contactDataWithServer.ContactData),
+                                    contactDataWithServer.ContactData.ContactDataID);
+                                break;
+                            case ServerType.UASearchPerson:
+                                CommonVariables.Listener.SendMsg(contactDataWithServer.ServerIP, contactDataWithServer.ServerPort,
+                                    CommonFlag.F_UAVerifyPersonSearch + JsonConvert.SerializeObject(contactDataWithServer.ContactData),
+                                    contactDataWithServer.ContactData.ContactDataID);
+                                break;
+                            case ServerType.UASearchGroup:
+                                CommonVariables.Listener.SendMsg(contactDataWithServer.ServerIP, contactDataWithServer.ServerPort,
+                                    CommonFlag.F_UAVerifyGroupSearch + JsonConvert.SerializeObject(contactDataWithServer.ContactData),
+                                    contactDataWithServer.ContactData.ContactDataID);
                                 break;
                             default:
                                 continue;
                         }
+                        exeContactDataBuffer.Add(contactDataWithServer);
                         GetUnUsingContactDataBuffer.RemoveAt(0);
                     }
                 }
@@ -132,23 +164,18 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
             }
         }
 
-
-        private string HandlerSendContactDataReturnData(string returnData, bool isError)
+        public void HandlerSendContactDataReturnData(string returnData)
         {
             ContactDataWithServer contactDataWithServer = exeContactDataBuffer.Where(t => t.ContactData.ContactDataID == returnData).SingleOrDefault();
             if (contactDataWithServer == null)
             {
-                return null;
+                return;
             }
             exeContactDataBuffer.Remove(contactDataWithServer);
-            if (isError)
+            if (contactDataWithServer != null)
             {
-                if (contactDataWithServer != null)
-                {
-                    GetUsingContactDataBuffer.Add(contactDataWithServer);
-                }
+                GetUsingContactDataBuffer.Add(contactDataWithServer);
             }
-            return null;
         }
     }
 

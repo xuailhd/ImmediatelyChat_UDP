@@ -98,6 +98,19 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
         }
         #endregion
 
+
+        public static ICommonFunctions CommonFunctions
+        {
+            get
+            {
+                if (Singleton<ICommonFunctions>.Instance == null)
+                {
+                    Singleton<ICommonFunctions>.Instance = Xugl.ImmediatelyChat.Core.DependencyResolution.ObjectContainerFactory.CurrentContainer.Resolver<ICommonFunctions>();
+                }
+                return Singleton<ICommonFunctions>.Instance;
+            }
+        }
+
         public static BufferContorl UAInfoContorl
         {
             get

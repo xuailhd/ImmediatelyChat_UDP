@@ -6,6 +6,23 @@ using System.Threading.Tasks;
 
 namespace Xugl.ImmediatelyChat.Common
 {
+    public enum MsgType
+    {
+        TestOnly = 1,
+        File = 2,
+    }
+
+    public enum ServerType
+    {
+        UA = 1,
+        MCS = 2,
+        MMS = 3,
+        MDS = 4,
+        UASearchPerson = 5,
+        UASearchGroup = 6,
+    }
+
+
     public class ClientModel
     {
         public string ObjectID { get; set; }
@@ -56,10 +73,7 @@ namespace Xugl.ImmediatelyChat.Common
 
     public class ContactDataWithServer
     {
-        /// <summary>
-        /// 1 UA;2 MCS;
-        /// </summary>
-        public int ServerType { get; set; }
+        public ServerType ServerType { get; set; }
         public string ServerIP { get; set; }
         public int ServerPort { get; set; }
 

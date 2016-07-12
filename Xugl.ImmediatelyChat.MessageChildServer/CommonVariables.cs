@@ -62,7 +62,6 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
 
         #endregion
 
-
         #region BufferContorl
         public static BufferContorl MessageContorl
         {

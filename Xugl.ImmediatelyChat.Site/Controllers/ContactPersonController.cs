@@ -11,21 +11,24 @@ using Xugl.ImmediatelyChat.Core;
 using System.Web.Script.Serialization;
 using Xugl.ImmediatelyChat.SocketEngine;
 using Xugl.ImmediatelyChat.IServices;
+using Xugl.ImmediatelyChat.Common;
 
 namespace Xugl.ImmediatelyChat.Site.Controllers
 {
     public class ContactPersonController : Controller
     {
-        private ICacheManage cacheManage;
-        private IContactPersonService contactPersonService;
-        private IAppServerService appServerService;
+        private readonly ICacheManage cacheManage;
+        private readonly IContactPersonService contactPersonService;
+        private readonly IAppServerService appServerService;
+        private readonly ICommonFunctions commonFunctions;
 
         public ContactPersonController(IContactPersonService contactPersonService, IAppServerService appServerService,
-            ICacheManage cacheManage)
+            ICacheManage cacheManage, ICommonFunctions commonFunctions)
         {
             this.contactPersonService = contactPersonService;
             this.appServerService = appServerService;
             this.cacheManage = cacheManage;
+            this.commonFunctions = commonFunctions;
         }
 
 
@@ -99,7 +102,7 @@ namespace Xugl.ImmediatelyChat.Site.Controllers
                 else
                 {
                     loginReturnContext.ObjectID = contactPerson.ObjectID;
-                    mmsServer = FindMMS(contactPerson.ObjectID);
+                    mmsServer = commonFunctions.FindMMSServer(cacheManage.GetCache<IList<MMSServer>>("MMSServers"),contactPerson.ObjectID);
                     loginReturnContext.Status = 0;
                 }
             }
@@ -113,22 +116,5 @@ namespace Xugl.ImmediatelyChat.Site.Controllers
 
             return Json(loginReturnContext, JsonRequestBehavior.AllowGet);
         }
-
-
-        private MMSServer FindMMS(string objectID)
-        {
-            MMSServer mmsServer = null;
-
-            IList<MMSServer> mmsServers = cacheManage.GetCache<IList<MMSServer>>("MMSServers");
-            foreach(MMSServer tempMMSServer in mmsServers)
-            {
-                if(tempMMSServer.ArrangeStr.Contains(objectID.Substring(0, 1)))
-                {
-                    return tempMMSServer;
-                }
-            }
-            return mmsServer;
-        }
-
     }
 }

@@ -26,29 +26,19 @@ namespace Xugl.ImmediatelyChat.Common
         public static string F_PSCallMDSStart { get { return f_PSCallMDSStart; } }
         public static string F_PSSendMMSUser { get { return f_PSSendMMSUser; } }
 
-        //private static string f_MMSVerifyMCS = "MCS";
-        //private static string f_MMSVerifyMDS = "MDS";
-        //private static string f_MMSCallMCSStart = "MCS start";
-        //private static string f_MMSCallMDSStart = "MDS start";
-        //private static string f_MMSReciveStopMCS = "stopMCS";
-        //private static string f_MMSReciveStopMDS = "stopMDS";
         private static string f_MMSVerifyUA = "VerifyUA";
         private static string f_MMSVerifyUAGetUAInfo = "MMSVerifyUAGetUAInfo";
         private static string f_MMSVerifyFBUAGetUAInfo = "MMSVerifyFBUAGetUAInfo";
+        private static string f_MMSVerifyMCSGetUAInfo = "MMSVerifyMCSGetUAInfo";
         private static string f_MMSVerifyMCSFBGetUAInfo = "VerifyMCSFBGetUAInfo";
         private static string f_MMSVerifyUASearch = "MMSVerifyUASearch";
         private static string f_MMSVerifyUAFBSearch = "MMSVerifyUAFBSearch";
         private static string f_MMSVerifyUAAddPerson = "MMSVerifyUAAddPerson";
         private static string f_MMSVerifyUAAddGroup = "MMSVerifyUAAddGroup";
-        //public static string F_MMSVerifyMCS { get { return f_MMSVerifyMCS; } }
-        //public static string F_MMSVerifyMDS { get { return f_MMSVerifyMDS; } }
-        //public static string F_MMSCallMCSStart { get { return f_MMSCallMCSStart; } }
-        //public static string F_MMSCallMDSStart { get { return f_MMSCallMDSStart; } }
-        //public static string F_MMSReciveStopMCS { get { return f_MMSReciveStopMCS; } }
-        //public static string F_MMSReciveStopMDS { get { return f_MMSReciveStopMDS; } }
         public static string F_MMSVerifyUA { get { return f_MMSVerifyUA; } }
         public static string F_MMSVerifyUAGetUAInfo { get { return f_MMSVerifyUAGetUAInfo; } }
         public static string F_MMSVerifyFBUAGetUAInfo { get { return f_MMSVerifyFBUAGetUAInfo; } }
+        public static string F_MMSVerifyMCSGetUAInfo { get { return f_MMSVerifyMCSGetUAInfo; } }
         public static string F_MMSVerifyMCSFBGetUAInfo { get { return f_MMSVerifyMCSFBGetUAInfo; } }
         public static string F_MMSVerifyUASearch { get { return f_MMSVerifyUASearch; } }
         public static string F_MMSVerifyUAFBSearch { get { return f_MMSVerifyUAFBSearch; } }
@@ -80,8 +70,12 @@ namespace Xugl.ImmediatelyChat.Common
 
         private static string f_UAVerifyUAInfo = "UAVerifyUAInfo";
         private static string f_UAVerifyMCSMSG = "UAVerifyMCSMSG";
+        private static string f_UAVerifyPersonSearch = "UAVerifyPersonSearch";
+        private static string f_UAVerifyGroupSearch = "UAVerifyGroupSearch";
         public static string F_UAVerifyUAInfo { get { return f_UAVerifyUAInfo; } }
         public static string F_UAVerifyMCSMSG { get { return f_UAVerifyMCSMSG; } }
+        public static string F_UAVerifyPersonSearch { get { return f_UAVerifyPersonSearch; } }
+        public static string F_UAVerifyGroupSearch { get { return f_UAVerifyGroupSearch; } }
 
         public static object lockobject = new object();
     }
