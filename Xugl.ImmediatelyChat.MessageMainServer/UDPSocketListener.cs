@@ -380,10 +380,13 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
             ClientSearchModel clientSearchModel = JsonConvert.DeserializeObject<ClientSearchModel>(data.Remove(0, CommonFlag.F_MMSVerifyUASearch.Length));
             if (clientSearchModel != null && !string.IsNullOrEmpty(clientSearchModel.ObjectID))
             {
-                CommonVariables.LogTool.Log("UA:" + clientSearchModel.ObjectID + "Type " + clientSearchModel.Type + " Search request  " + clientSearchModel.SearchKey);
+                ClientModel clientModel = 
+                //CommonVariables.LogTool.Log("UA:" + clientSearchModel.ObjectID + "Type " + clientSearchModel.Type + " Search request  " + clientSearchModel.SearchKey);
                 if (clientSearchModel.Type == 1)
                 {
-                    token.Models = ContactPersonToContacData(token.ContactPersonService.SearchPerson(clientSearchModel.ObjectID, clientSearchModel.SearchKey));
+                    CommonVariables.UAInfoContorl.UpdateClientModel(clientSearchModel)
+                        
+                        = ContactPersonToContacData(token.ContactPersonService.SearchPerson(clientSearchModel.ObjectID, clientSearchModel.SearchKey));
                 }
                 else if (clientSearchModel.Type == 2)
                 {
@@ -406,21 +409,15 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
         private string HandleMMSVerifyFBUAGetUAInfo(string data, MMSListenerUDPToken token)
         {
             string contactDataID = data.Remove(0, CommonFlag.F_MMSVerifyFBUAGetUAInfo.Length);
-            if (token.Models[0].ContactDataID != contactDataID)
-            {
-                CommonVariables.LogTool.Log("data transfer error " + token.Models[0].ContactDataID + "  vs " + contactDataID);
-            }
-            token.Models.RemoveAt(0);
-            if (token.Models.Count <= 0)
-            {
-                return string.Empty;
-            }
-            return CommonVariables.serializer.Serialize(token.Models[0]);
+
+            CommonVariables.UAInfoContorl.HandlerSendContactDataReturnData(contactDataID);
+
+            return string.Empty;
         }
 
         private string HandleMMSVerifyMCSGetUAInfo(string data, MMSListenerUDPToken token)
         {
-            ClientModel clientStatusModel = CommonVariables.serializer.Deserialize<ClientModel>(data.Remove(0, CommonFlag.F_MMSVerifyUAGetUAInfo.Length));
+            ClientModel clientStatusModel = JsonConvert.DeserializeObject<ClientModel>(data.Remove(0, CommonFlag.F_MMSVerifyMCSGetUAInfo.Length));
 
             if (clientStatusModel == null)
             {
@@ -432,17 +429,20 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                 return string.Empty;
             }
 
-            token.Models = PreparContactData(clientStatusModel.ObjectID, clientStatusModel.UpdateTime, token.ContactPersonService);
-            if (token.Models != null && token.Models.Count > 0)
+            IList<ContactData> contactDatas = PreparContactData(clientStatusModel.ObjectID, clientStatusModel.UpdateTime, token.ContactPersonService);
+
+            if (contactDatas != null && contactDatas.Count > 0)
             {
-                return CommonVariables.serializer.Serialize(token.Models[0]);
+                CommonVariables.UAInfoContorl.AddContactDataIntoBuffer(contactDatas, token.IP, token.Port, ServerType.MCS);
+
+                return contactDatas.Count.ToString();
             }
             return string.Empty;
         }
 
         private string HandleMMSVerifyUAGetUAInfo(string data, MMSListenerUDPToken token)
         {
-            ClientModel clientStatusModel = CommonVariables.serializer.Deserialize<ClientModel>(data.Remove(0, CommonFlag.F_MMSVerifyUAGetUAInfo.Length));
+            ClientModel clientStatusModel = JsonConvert.DeserializeObject<ClientModel>(data.Remove(0, CommonFlag.F_MMSVerifyUAGetUAInfo.Length));
 
             if (clientStatusModel == null)
             {
@@ -454,10 +454,17 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                 return string.Empty;
             }
 
-            token.Models = PreparContactData(clientStatusModel.ObjectID, clientStatusModel.UpdateTime,token.ContactPersonService);
-            if (token.Models != null && token.Models.Count > 0)
+
+            IList<ContactData> contactDatas = PreparContactData(clientStatusModel.ObjectID, clientStatusModel.UpdateTime, token.ContactPersonService);
+
+            if (contactDatas != null && contactDatas.Count > 0)
             {
-                return CommonVariables.serializer.Serialize(token.Models[0]);
+                clientStatusModel.Client_IP = token.IP;
+                clientStatusModel.Client_Port = token.Port;
+                CommonVariables.UAInfoContorl.UpdateClientModel(clientStatusModel);
+                CommonVariables.UAInfoContorl.AddContactDataIntoBuffer(contactDatas, clientStatusModel.Client_IP, clientStatusModel.Client_Port, ServerType.MCS);
+
+                return contactDatas.Count.ToString();
             }
             return string.Empty;
         }
@@ -465,66 +472,46 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
         private string HandleMMSVerifyUA(string data, MMSListenerUDPToken token)
         {
             ContactPerson tempContactPerson = null;
-            ClientModel clientStatusModel = CommonVariables.serializer.Deserialize<ClientModel>(data.Remove(0, CommonFlag.F_MMSVerifyUA.Length));
+            ClientModel clientStatusModel = JsonConvert.DeserializeObject<ClientModel>(data.Remove(0, CommonFlag.F_MMSVerifyUA.Length));
 
             CommonVariables.LogTool.Log("UA:" + clientStatusModel.ObjectID + " connected  " + clientStatusModel.LatestTime);
             //Find MCS
-            for (int i = 0; i < CommonVariables.MCSServers.Count; i++)
+            MCSServer server = CommonVariables.CommonFunctions.FindMCSServer(CommonVariables.MCSServers,clientStatusModel.ObjectID);
+            if(server == null)
             {
-                if (CommonVariables.MCSServers[i].ArrangeStr.Contains(clientStatusModel.ObjectID.Substring(0, 1)))
-                {
-                    clientStatusModel.MCS_IP = CommonVariables.MCSServers[i].MCS_IP;
-                    clientStatusModel.MCS_Port = CommonVariables.MCSServers[i].MCS_Port;
-;
-
-                    tempContactPerson = token.ContactPersonService.FindContactPersonNoTracking(clientStatusModel.ObjectID);
-                    if (tempContactPerson == null)
-                    {
-                        return string.Empty;
-                    }
-
-                    if (clientStatusModel.LatestTime.CompareTo(tempContactPerson.LatestTime) <= 0)
-                    {
-                        clientStatusModel.LatestTime = tempContactPerson.LatestTime;
-                    }
-                    else
-                    {
-                        tempContactPerson.LatestTime = clientStatusModel.LatestTime;
-                        token.ContactPersonService.UpdateContactPerson(tempContactPerson);
-                    }
-
-                    clientStatusModel.UpdateTime = tempContactPerson.UpdateTime;
-
-                    string mcs_UpdateTime = CommonVariables.SyncSocketClientIntance.SendMsgWithReceive(CommonVariables.MCSServers[i].MCS_IP, CommonVariables.MCSServers[i].MCS_Port,
-                        CommonFlag.F_MCSReceiveMMSUAUpdateTime + CommonVariables.serializer.Serialize(clientStatusModel));
-
-                    //CommonVariables.LogTool.Log("mcs_UpdateTime:" + mcs_UpdateTime);
-
-                    if (string.IsNullOrEmpty(mcs_UpdateTime))
-                    {
-                        return string.Empty;
-                    }
-
-                    IList<ContactData> contactDatas = PreparContactData(clientStatusModel.ObjectID, mcs_UpdateTime, token.ContactPersonService);
-
-                    foreach (ContactData contactData in contactDatas)
-                    {
-                        CommonVariables.SyncSocketClientIntance.SendMsg(CommonVariables.MCSServers[i].MCS_IP, CommonVariables.MCSServers[i].MCS_Port,
-                            CommonFlag.F_MCSReceiveUAInfo + CommonVariables.serializer.Serialize(contactData));
-                    }
-
-                    //CommonVariables.UAInfoContorl.AddUAModelIntoBuffer(clientStatusModel);
-                    break;
-                }
+                return "MMS:can not find MCS server";
             }
 
+            clientStatusModel.MCS_IP = server.MCS_IP;
+            clientStatusModel.MCS_Port = server.MCS_Port;
+            tempContactPerson = token.ContactPersonService.FindContactPerson(clientStatusModel.ObjectID);
+            if (tempContactPerson == null)
+            {
+                return "MMS:did not exist this user";
+            }
+
+            if (clientStatusModel.LatestTime.CompareTo(tempContactPerson.LatestTime) <= 0)
+            {
+                clientStatusModel.LatestTime = tempContactPerson.LatestTime;
+            }
+            else
+            {
+                tempContactPerson.LatestTime = clientStatusModel.LatestTime;
+                token.ContactPersonService.UpdateContactPerson(tempContactPerson);
+            }
+
+            clientStatusModel.UpdateTime = tempContactPerson.UpdateTime;
+
+            base.SendMsg(server.MCS_IP,server.MCS_Port,
+                CommonFlag.F_MCSReceiveMMSUAUpdateTime + JsonConvert.SerializeObject(clientStatusModel),clientStatusModel.ObjectID);
+
             //Send MCS
-            return CommonVariables.serializer.Serialize(clientStatusModel);
+            return JsonConvert.SerializeObject(clientStatusModel);
         }
 
         private string HandlePSCallMMSStart(string data)
         {
-            IList<MCSServer> mcsServers = CommonVariables.serializer.Deserialize<IList<MCSServer>>(data.Remove(0, CommonFlag.F_PSCallMMSStart.Length));
+            IList<MCSServer> mcsServers = JsonConvert.DeserializeObject<IList<MCSServer>>(data.Remove(0, CommonFlag.F_PSCallMMSStart.Length));
             CommonVariables.LogTool.Log("MCS count:" + mcsServers.Count);
             foreach (MCSServer mcsServer in mcsServers)
             {
@@ -580,6 +567,16 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
             }
 
             return null;
+        }
+
+        private ClientModel TransformModel(ClientSearchModel model)
+        {
+            ClientModel clientModel;
+            if(model!=null && String.IsNullOrEmpty(model.ObjectID))
+            {
+
+            }
+
         }
 
 
