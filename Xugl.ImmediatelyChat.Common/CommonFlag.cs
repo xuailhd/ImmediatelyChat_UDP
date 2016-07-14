@@ -52,6 +52,7 @@ namespace Xugl.ImmediatelyChat.Common
         private static string f_MCSReceiveUAFBMSG = "VerifyFBMSG";
         private static string f_MCSVerifyUAInfo = "MCSVerifyUAInfo";
         private static string f_MCSReceiveMMSUAUpdateTime = "VerifyUAUpdateTime";
+        private static string f_MCSVerifyMMSUpdateGroupSub = "MCSVerifyMMSUpdateGroupSub";
         public static string F_MCSVerifyUA { get { return f_MCSVerifyUA; } }
         public static string F_MCSVerifyUAMSG { get { return f_MCSVerifyUAMSG; } }
         public static string F_MCSVerifyUAGetMSG { get { return f_MCSVerifyUAGetMSG; } }
@@ -59,6 +60,7 @@ namespace Xugl.ImmediatelyChat.Common
         public static string F_MCSReceiveUAFBMSG { get { return f_MCSReceiveUAFBMSG; } }
         public static string F_MCSVerifyUAInfo { get { return f_MCSVerifyUAInfo; } }
         public static string F_MCSReceiveMMSUAUpdateTime { get { return f_MCSReceiveMMSUAUpdateTime; } }
+        public static string F_MCSVerifyMMSUpdateGroupSub { get { return f_MCSVerifyMMSUpdateGroupSub; } }
 
         private static string f_MDSVerifyMCSMSG = "VerifyMCSMSG";
         private static string f_MDSVerifyMCSGetMSG = "VerifyMCSGetMSG";

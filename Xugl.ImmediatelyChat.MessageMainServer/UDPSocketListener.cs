@@ -35,7 +35,7 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
     }
 
 
-    internal class UDPSocketListener : AsyncSocketListenerUDP<MMSListenerUDPToken>
+    public class UDPSocketListener : AsyncSocketListenerUDP<MMSListenerUDPToken>
     {
         public UDPSocketListener()
             : base(1024,100, 20, CommonVariables.LogTool)
@@ -151,24 +151,18 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                             {
                                 token.ContactPersonService.UpdateContactUpdateTimeByGroup(contactGroup.GroupObjectID, contactGroupSub.UpdateTime);
 
-                                ClientModel clientStatusModel = new ClientModel();
+                                ContactData contactDataGroupSub = new ContactData();
+                                contactDataGroupSub.ContactGroupID = contactGroupSub.ContactGroupID;
+                                contactDataGroupSub.ContactPersonObjectID = contactGroupSub.ContactPersonObjectID;
+                                contactDataGroupSub.IsDelete = contactGroupSub.IsDelete;
+                                contactDataGroupSub.UpdateTime = contactGroupSub.UpdateTime;
+                                contactDataGroupSub.DataType = 3;
 
-                                clientStatusModel.MCS_IP = model.MCS_IP;
-                                clientStatusModel.MCS_Port = model.MCS_Port;
-                                clientStatusModel.ObjectID = model.ObjectID;
-
-
-                                base.SendMsg(clientStatusModel.MCS_IP, clientStatusModel.MCS_Port,
-                                    CommonFlag.F_MCSReceiveMMSUAUpdateTime + JsonConvert.SerializeObject(clientStatusModel), clientStatusModel.ObjectID);
-
-                                IList<ContactData> contactDatas = PreparContactData(clientStatusModel.ObjectID, mcs_UpdateTime, token.ContactPersonService);
-
-                                foreach (ContactData _contactData in contactDatas)
+                                foreach(MCSServer server in CommonVariables.MCSServers)
                                 {
-                                    CommonVariables.SyncSocketClientIntance.SendMsg(clientStatusModel.MCS_IP, clientStatusModel.MCS_Port,
-                                        CommonFlag.F_MCSReceiveUAInfo + CommonVariables.serializer.Serialize(_contactData));
+                                    CommonVariables.UAInfoContorl.AddContactDataIntoBuffer(contactDataGroupSub, server.MCS_IP, server.MCS_Port, ServerType.MCS);
                                 }
-
+                                
                                 contactGroup = token.ContactPersonService.FindContactGroup(model.GroupObjectID);
                                 contactData.GroupName = contactGroup.GroupName;
                                 contactData.GroupObjectID = contactGroup.GroupObjectID;
@@ -375,24 +369,19 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
             ClientSearchModel clientSearchModel = JsonConvert.DeserializeObject<ClientSearchModel>(data.Remove(0, CommonFlag.F_MMSVerifyUASearch.Length));
             if (clientSearchModel != null && !string.IsNullOrEmpty(clientSearchModel.ObjectID))
             {
-                ClientModel clientModel = TransformModel(clientSearchModel);
-                clientModel.Client_IP = token.IP;
-                clientModel.Client_Port = token.Port;
                 IList<ContactData> contactdatas = null;
                 //CommonVariables.LogTool.Log("UA:" + clientSearchModel.ObjectID + "Type " + clientSearchModel.Type + " Search request  " + clientSearchModel.SearchKey);
                 if (clientSearchModel.Type == 1)
                 {
-                    CommonVariables.UAInfoContorl.UpdateClientModel(clientModel);
                     contactdatas = ContactPersonToContacData(token.ContactPersonService.SearchPerson(clientSearchModel.ObjectID, clientSearchModel.SearchKey));
                     CommonVariables.UAInfoContorl.AddContactDataIntoBuffer(contactdatas,
-                        clientModel.Client_IP, clientModel.Client_Port, ServerType.UASearchPerson);
+                        token.IP, token.Port, ServerType.UASearchPerson);
                 }
                 else if (clientSearchModel.Type == 2)
                 {
-                    CommonVariables.UAInfoContorl.UpdateClientModel(clientModel);
                     contactdatas = ContactGroupToContacData(token.ContactPersonService.SearchGroup(clientSearchModel.ObjectID, clientSearchModel.SearchKey));
                     CommonVariables.UAInfoContorl.AddContactDataIntoBuffer(ContactGroupToContacData(token.ContactPersonService.SearchGroup(clientSearchModel.ObjectID, clientSearchModel.SearchKey)),
-                        clientModel.Client_IP, clientModel.Client_Port, ServerType.UASearchGroup);
+                        token.IP, token.Port, ServerType.UASearchGroup);
                 }
 
                 if(contactdatas!=null && contactdatas.Count>0)
@@ -575,17 +564,6 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
 
             return null;
         }
-
-        private ClientModel TransformModel(ClientSearchModel model)
-        {
-            ClientModel clientModel;
-            if(model!=null && String.IsNullOrEmpty(model.ObjectID))
-            {
-
-            }
-
-        }
-
 
         public void BeginService()
         {
