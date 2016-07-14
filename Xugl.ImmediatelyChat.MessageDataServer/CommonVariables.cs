@@ -23,21 +23,17 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
 
         public static bool IsBeginMessageService { get; set; }
 
-        #region JavaScriptSerializer
-
-        public static JavaScriptSerializer serializer
+        public static UDPSocketListener Listener
         {
             get
             {
-                if (Singleton<JavaScriptSerializer>.Instance == null)
+                if (Singleton<UDPSocketListener>.Instance == null)
                 {
-                    Singleton<JavaScriptSerializer>.Instance = new JavaScriptSerializer();
+                    Singleton<UDPSocketListener>.Instance = new UDPSocketListener();
                 }
-
-                return Singleton<JavaScriptSerializer>.Instance;
+                return Singleton<UDPSocketListener>.Instance;
             }
         }
-        #endregion
 
         #region manage MCSs
 
@@ -108,5 +104,17 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             }
         }
         #endregion
+
+        public static ICommonFunctions CommonFunctions
+        {
+            get
+            {
+                if (Singleton<ICommonFunctions>.Instance == null)
+                {
+                    Singleton<ICommonFunctions>.Instance = Xugl.ImmediatelyChat.Core.DependencyResolution.ObjectContainerFactory.CurrentContainer.Resolver<ICommonFunctions>();
+                }
+                return Singleton<ICommonFunctions>.Instance;
+            }
+        }
     }
 }

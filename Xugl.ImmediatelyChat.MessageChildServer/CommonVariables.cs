@@ -76,7 +76,6 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
         }
         #endregion
 
-
         #region InRunningUAList
         //public static IList<string> InRunningUAList
         //{
@@ -86,7 +85,6 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
         //    }
         //}
         #endregion
-
 
         #region  OperateFile
         public static IOperateFile OperateFile

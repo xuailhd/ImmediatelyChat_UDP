@@ -115,6 +115,16 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
                     {
                         return HandleMCSVerfiyMDSMSG(data, token);
                     }
+
+                    if (data.StartsWith(CommonFlag.F_MCSVerfiyFBMDSMSG))
+                    {
+                        return HandleMCSVerfiyFBMDSMSG(data, token);
+                    }
+
+                    if (data.StartsWith(CommonFlag.F_MCSVerifySendUAMsgFB))
+                    {
+                        return HandleMCSVerifySendUAMsgFB(data, token);
+                    }
                 }
             }
             catch (Exception ex)
@@ -124,6 +134,26 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
             return string.Empty;
         }
 
+        private string HandleMCSVerifySendUAMsgFB(string data, MCSListenerUDPToken token)
+        {
+            string tempStr = data.Remove(0, CommonFlag.F_MCSVerifySendUAMsgFB.Length);
+
+            if (!string.IsNullOrEmpty(tempStr))
+            {
+                CommonVariables.MessageContorl.HandlerUAMsgReturnData(tempStr);
+            }
+            return string.Empty;
+        }
+        private string HandleMCSVerfiyFBMDSMSG(string data, MCSListenerUDPToken token)
+        {
+            string tempStr = data.Remove(0, CommonFlag.F_MCSVerfiyFBMDSMSG.Length);
+
+            if (!string.IsNullOrEmpty(tempStr))
+            {
+                CommonVariables.MessageContorl.HandlerMDSmsgReturnData(tempStr);
+            }
+            return string.Empty;
+        }
         private string HandleMCSVerfiyMDSMSG(string data, MCSListenerUDPToken token)
         {
             string tempStr = data.Remove(0, CommonFlag.F_MCSVerfiyMDSMSG.Length);

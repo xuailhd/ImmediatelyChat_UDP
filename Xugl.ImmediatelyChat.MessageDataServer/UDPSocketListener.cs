@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -19,7 +20,7 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
     internal class UDPSocketListener : AsyncSocketListenerUDP<MDSListenerToken>
     {
         public UDPSocketListener()
-            : base(1024, 50, CommonVariables.LogTool)
+            : base(1024, 50,20, CommonVariables.LogTool)
         {
             
         }
@@ -140,22 +141,18 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
         private string HandleMDSVerifyMCSMSG(string data,MDSListenerToken token)
         {
             string tempStr = data.Remove(0, CommonFlag.F_MDSVerifyMCSMSG.Length);
-            MsgRecord msgReocod = CommonVariables.serializer.Deserialize<MsgRecord>(tempStr);
+            MsgRecord msgReocod = JsonConvert.DeserializeObject<MsgRecord>(tempStr);
             if (msgReocod != null)
             {
                 if (!string.IsNullOrEmpty(msgReocod.MsgSenderObjectID))
                 {
                     CommonVariables.MessageContorl.AddMSgRecordIntoBuffer(msgReocod);
 
-                    foreach(MCSServer mcsServer in CommonVariables.MCSServers)
-                    {
-                        if (mcsServer.ArrangeStr.Contains(msgReocod.MsgRecipientObjectID.Substring(0, 1)))
-                        {
-                            CommonVariables.MessageContorl.SendMsgToMCS(mcsServer, msgReocod);
-                            break;
-                        }
-                    }
-                    return msgReocod.MsgID;
+                    MCSServer server = CommonVariables.CommonFunctions.FindMCSServer(CommonVariables.MCSServers, 
+                        msgReocod.MsgRecipientObjectID);
+
+                    CommonVariables.MessageContorl.SendMsgToMCS(server, msgReocod);
+                    return CommonFlag.F_MCSVerfiyMDSMSG +  msgReocod.MsgID;
                 }
             }
             return string.Empty;
@@ -164,7 +161,7 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
         private string HandleMDSVerifyMCSGetMSG(string data,MDSListenerToken token)
         {
             string tempStr = data.Remove(0, CommonFlag.F_MDSVerifyMCSGetMSG.Length);
-            ClientModel clientModel = CommonVariables.serializer.Deserialize<ClientModel>(tempStr);
+            ClientModel clientModel = JsonConvert.DeserializeObject<ClientModel>(tempStr);
 
             if (clientModel != null)
             {
@@ -176,7 +173,7 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
                     if (token.Models != null && token.Models.Count > 0)
                     {
                         //CommonVariables.LogTool.Log("token.Models.Count:" + token.Models.Count.ToString());
-                        return CommonFlag.F_MCSVerfiyMDSMSG + CommonVariables.serializer.Serialize(token.Models[0]);
+                        return CommonFlag.F_MCSVerfiyMDSMSG + JsonConvert.SerializeObject(token.Models[0]);
                     }
                 }
             }

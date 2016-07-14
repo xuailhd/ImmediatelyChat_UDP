@@ -44,13 +44,10 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
         private const int _maxSize = 1024;
         private const int _maxSendConnections = 10;
 
-        private AsyncSocketClientUDP asyncSocketClient;
 
         public BufferContorl()
         {
             msgRecordService = ObjectContainerFactory.CurrentContainer.Resolver<IMsgRecordService>();
-            maxBufferRecordCount = 1000;
-            asyncSocketClient = new AsyncSocketClientUDP(_maxSize, _maxSendConnections, CommonVariables.LogTool);
         }
 
         public void SendMsgToMCS(MCSServer mcsServer,MsgRecord msgRecord)
@@ -123,12 +120,12 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
         }
 
 
-        public IList<MsgRecord> GetMSG(IMsgRecordService _msgRecordService, ClientModel clientModel)
+        public IList<MsgRecord> GetMSG(ClientModel clientModel)
         {
             MsgRecordQuery query = new MsgRecordQuery();
             query.MsgRecipientObjectID = clientModel.ObjectID;
             query.MsgRecordtime = clientModel.LatestTime;
-            return _msgRecordService.LoadMsgRecord(query);
+            return msgRecordService.LoadMsgRecord(query);
         }
 
         public void StartMainThread()
@@ -178,6 +175,11 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             {
                 CommonVariables.LogTool.Log(ex.Message + ex.StackTrace);
             }
+        }
+
+        private void MainSendRecordThread()
+        {
+
         }
     }
 

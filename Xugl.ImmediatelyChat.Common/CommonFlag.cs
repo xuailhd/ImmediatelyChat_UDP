@@ -47,16 +47,20 @@ namespace Xugl.ImmediatelyChat.Common
 
         private static string f_MCSVerifyUA = "VerifyAccount";
         private static string f_MCSVerifyUAMSG = "VerifyMSG";
+        private static string f_MCSVerifySendUAMsgFB = "MCSVerifySendUAMsgFB";
         private static string f_MCSVerifyUAGetMSG = "VerifyGetMSG";
         private static string f_MCSVerfiyMDSMSG = "VerifyMDSMSG";
+        private static string f_MCSVerfiyFBMDSMSG = "VerifyFBMDSMSG";
         private static string f_MCSReceiveUAFBMSG = "VerifyFBMSG";
         private static string f_MCSVerifyUAInfo = "MCSVerifyUAInfo";
         private static string f_MCSReceiveMMSUAUpdateTime = "VerifyUAUpdateTime";
         private static string f_MCSVerifyMMSUpdateGroupSub = "MCSVerifyMMSUpdateGroupSub";
         public static string F_MCSVerifyUA { get { return f_MCSVerifyUA; } }
         public static string F_MCSVerifyUAMSG { get { return f_MCSVerifyUAMSG; } }
+        public static string F_MCSVerifySendUAMsgFB { get { return f_MCSVerifySendUAMsgFB; } }
         public static string F_MCSVerifyUAGetMSG { get { return f_MCSVerifyUAGetMSG; } }
         public static string F_MCSVerfiyMDSMSG { get { return f_MCSVerfiyMDSMSG; } }
+        public static string F_MCSVerfiyFBMDSMSG { get { return f_MCSVerfiyFBMDSMSG; } }
         public static string F_MCSReceiveUAFBMSG { get { return f_MCSReceiveUAFBMSG; } }
         public static string F_MCSVerifyUAInfo { get { return f_MCSVerifyUAInfo; } }
         public static string F_MCSReceiveMMSUAUpdateTime { get { return f_MCSReceiveMMSUAUpdateTime; } }

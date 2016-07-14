@@ -495,7 +495,7 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
             CommonVariables.Listener.SendMsg(clientModel.MDS_IP, clientModel.MDS_Port, messageStr, clientModel.ObjectID);
         }
 
-        public void HandlerMDSmsgReturnData(string returnData, bool IsError)
+        public void HandlerMDSmsgReturnData(string returnData)
         {
             if (!string.IsNullOrEmpty(returnData))
             {
@@ -504,12 +504,9 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
                 if (tempmodel != null)
                 {
                     tempmodel.reTryCount = tempmodel.reTryCount + 1;
-                    if (IsError)
+                    if (tempmodel.reTryCount <= 3)
                     {
-                        if (tempmodel.reTryCount <= 3)
-                        {
-                            GetUsingMsgRecordBufferToMDS.Add(tempmodel);
-                        }
+                        GetUsingMsgRecordBufferToMDS.Add(tempmodel);
                     }
                     ExeingMsgRecordForMDS.Remove(tempmodel);
                 }
@@ -517,7 +514,7 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
         }
 
 
-        public void HandlerUAMsgReturnData(string returnData,bool IsError)
+        public void HandlerUAMsgReturnData(string returnData)
         {
             if (!string.IsNullOrEmpty(returnData))
             {
@@ -525,7 +522,8 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
 
                 if (tempmodel != null)
                 {
-                    if (IsError)
+                    tempmodel.reTryCount = tempmodel.reTryCount + 1;
+                    if (tempmodel.reTryCount <= 3)
                     {
                         GetUsingMsgRecordBufferToUA.Add(tempmodel);
                     }
