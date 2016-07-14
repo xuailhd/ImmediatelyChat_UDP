@@ -81,17 +81,21 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                         return HandleMMSVerifyUAGetUAInfo(data, token);
                     }
 
-                    if(data.StartsWith(CommonFlag.F_MMSVerifyMCSGetUAInfo))
-                    {
-                        return HandleMMSVerifyMCSGetUAInfo(data, token);
-                    }
-                    
-
                     if (data.StartsWith(CommonFlag.F_MMSVerifyFBUAGetUAInfo))
                     {
                         return HandleMMSVerifyFBUAGetUAInfo(data, token);
                     }
 
+                    if(data.StartsWith(CommonFlag.F_MMSVerifyMCSGetUAInfo))
+                    {
+                        return HandleMMSVerifyMCSGetUAInfo(data, token);
+                    }
+
+                    if (data.StartsWith(CommonFlag.F_MMSVerifyMCSFBGetUAInfo))
+                    {
+                        return HandleMMSVerifyMCSFBGetUAInfo(data, token);
+                    }
+                    
                     if (data.StartsWith(CommonFlag.F_MMSVerifyUASearch))
                     {
                         return HandleMMSVerifyUASearch(data, token);
@@ -280,7 +284,7 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
 
         private string HandleMMSVerifyUAAddPerson(string data, MMSListenerUDPToken token)
         {
-            ClientAddPerson model = CommonVariables.serializer.Deserialize<ClientAddPerson>(data.Remove(0, CommonFlag.F_MMSVerifyUAAddPerson.Length));
+            ClientAddPerson model = JsonConvert.DeserializeObject<ClientAddPerson>(data.Remove(0, CommonFlag.F_MMSVerifyUAAddPerson.Length));
             if (model != null && !string.IsNullOrEmpty(model.ObjectID))
             {
                 ContactData contactData = new ContactData();
@@ -313,8 +317,7 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                                 contactData.ObjectID = contactPersonList.ObjectID;
                                 contactData.DataType = 1;
 
-                                CommonVariables.SyncSocketClientIntance.SendMsg(model.MCS_IP, model.MCS_Port,
-                                CommonFlag.F_MCSReceiveUAInfo + CommonVariables.serializer.Serialize(contactData));
+                                CommonVariables.UAInfoContorl.AddContactDataIntoBuffer(contactData, model.MCS_IP, model.MCS_Port, ServerType.MCS);
                             }
 
                         }
@@ -338,7 +341,7 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                     contactData.DataType = 1;
                 }
 
-                return CommonVariables.serializer.Serialize(contactData);
+                return JsonConvert.SerializeObject(contactData);
             }
             return string.Empty;
         }
@@ -359,47 +362,42 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
             return "failed";
         }
 
-        //private string HandleMMSVerifyUAFBSearch(string data, MMSListenerUDPToken token)
-        //{
-        //    string contactDataID = data.Remove(0, CommonFlag.F_MMSVerifyUAFBSearch.Length);
-        //    CommonVariables.LogTool.Log("UA F_MMSVerifyUAFBSearch:" + contactDataID);
-        //    if (token.Models[0].ContactDataID != contactDataID)
-        //    {
-        //        CommonVariables.LogTool.Log("Search data transfer error " + token.Models[0].ContactDataID + "  vs " + contactDataID);
-        //    }
-        //    token.Models.RemoveAt(0);
-        //    if (token.Models.Count <= 0)
-        //    {
-        //        return string.Empty;
-        //    }
-        //    return CommonVariables.serializer.Serialize(token.Models[0]);
-        //}
+        private string HandleMMSVerifyUAFBSearch(string data, MMSListenerUDPToken token)
+        {
+            string contactDataID = data.Remove(0, CommonFlag.F_MMSVerifyUAFBSearch.Length);
+            CommonVariables.UAInfoContorl.HandlerSendContactDataReturnData(contactDataID);
+
+            return string.Empty;
+        }
 
         private string HandleMMSVerifyUASearch(string data, MMSListenerUDPToken token)
         {
             ClientSearchModel clientSearchModel = JsonConvert.DeserializeObject<ClientSearchModel>(data.Remove(0, CommonFlag.F_MMSVerifyUASearch.Length));
             if (clientSearchModel != null && !string.IsNullOrEmpty(clientSearchModel.ObjectID))
             {
-                ClientModel clientModel = 
+                ClientModel clientModel = TransformModel(clientSearchModel);
+                clientModel.Client_IP = token.IP;
+                clientModel.Client_Port = token.Port;
+                IList<ContactData> contactdatas = null;
                 //CommonVariables.LogTool.Log("UA:" + clientSearchModel.ObjectID + "Type " + clientSearchModel.Type + " Search request  " + clientSearchModel.SearchKey);
                 if (clientSearchModel.Type == 1)
                 {
-                    CommonVariables.UAInfoContorl.UpdateClientModel(clientSearchModel)
-                        
-                        = ContactPersonToContacData(token.ContactPersonService.SearchPerson(clientSearchModel.ObjectID, clientSearchModel.SearchKey));
+                    CommonVariables.UAInfoContorl.UpdateClientModel(clientModel);
+                    contactdatas = ContactPersonToContacData(token.ContactPersonService.SearchPerson(clientSearchModel.ObjectID, clientSearchModel.SearchKey));
+                    CommonVariables.UAInfoContorl.AddContactDataIntoBuffer(contactdatas,
+                        clientModel.Client_IP, clientModel.Client_Port, ServerType.UASearchPerson);
                 }
                 else if (clientSearchModel.Type == 2)
                 {
-                    token.Models = ContactGroupToContacData(token.ContactPersonService.SearchGroup(clientSearchModel.ObjectID, clientSearchModel.SearchKey));
+                    CommonVariables.UAInfoContorl.UpdateClientModel(clientModel);
+                    contactdatas = ContactGroupToContacData(token.ContactPersonService.SearchGroup(clientSearchModel.ObjectID, clientSearchModel.SearchKey));
+                    CommonVariables.UAInfoContorl.AddContactDataIntoBuffer(ContactGroupToContacData(token.ContactPersonService.SearchGroup(clientSearchModel.ObjectID, clientSearchModel.SearchKey)),
+                        clientModel.Client_IP, clientModel.Client_Port, ServerType.UASearchGroup);
                 }
 
-                if (token.Models != null && token.Models.Count > 0)
+                if(contactdatas!=null && contactdatas.Count>0)
                 {
-                    return CommonVariables.serializer.Serialize(token.Models[0]);
-                }
-                else
-                {
-                    CommonVariables.LogTool.Log("Search request Result null ");
+                    return contactdatas.Count.ToString();
                 }
             }
 
@@ -437,6 +435,15 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
 
                 return contactDatas.Count.ToString();
             }
+            return string.Empty;
+        }
+
+        private string HandleMMSVerifyMCSFBGetUAInfo(string data, MMSListenerUDPToken token)
+        {
+            string contactDataID = data.Remove(0, CommonFlag.F_MMSVerifyFBUAGetUAInfo.Length);
+
+            CommonVariables.UAInfoContorl.HandlerSendContactDataReturnData(contactDataID);
+
             return string.Empty;
         }
 

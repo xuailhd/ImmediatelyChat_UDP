@@ -35,8 +35,6 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
         private int sendContactDataDelay = 100;
         public bool IsRunning = false;
 
-
-
         #region buffer manager
         private IList<ContactDataWithServer> GetUsingContactDataBuffer
         {
@@ -118,6 +116,28 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                 contactDataWithServer.ServerType = serverType;
                 GetUsingContactDataBuffer.Add(contactDataWithServer);
             }
+        }
+
+        public void AddContactDataIntoBuffer(ContactData contactData, string serverIP, int port, ServerType serverType)
+        {
+            ContactDataWithServer contactDataWithServer;
+
+            if (string.IsNullOrEmpty(serverIP))
+            {
+                return;
+            }
+
+            if (contactData == null || String.IsNullOrEmpty(contactData.ContactDataID))
+            {
+                return;
+            }
+
+            contactDataWithServer = new ContactDataWithServer();
+            contactDataWithServer.ContactData = contactData;
+            contactDataWithServer.ServerIP = serverIP;
+            contactDataWithServer.ServerPort = port;
+            contactDataWithServer.ServerType = serverType;
+            GetUsingContactDataBuffer.Add(contactDataWithServer);
         }
 
         public void SendContactDataThread()

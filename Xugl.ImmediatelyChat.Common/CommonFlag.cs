@@ -30,7 +30,7 @@ namespace Xugl.ImmediatelyChat.Common
         private static string f_MMSVerifyUAGetUAInfo = "MMSVerifyUAGetUAInfo";
         private static string f_MMSVerifyFBUAGetUAInfo = "MMSVerifyFBUAGetUAInfo";
         private static string f_MMSVerifyMCSGetUAInfo = "MMSVerifyMCSGetUAInfo";
-        private static string f_MMSVerifyMCSFBGetUAInfo = "VerifyMCSFBGetUAInfo";
+        private static string f_MMSVerifyMCSFBGetUAInfo = "MMSVerifyMCSFBGetUAInfo";
         private static string f_MMSVerifyUASearch = "MMSVerifyUASearch";
         private static string f_MMSVerifyUAFBSearch = "MMSVerifyUAFBSearch";
         private static string f_MMSVerifyUAAddPerson = "MMSVerifyUAAddPerson";
