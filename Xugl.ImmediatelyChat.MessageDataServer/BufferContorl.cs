@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -21,15 +22,11 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
     {
         private readonly int maxBufferRecordCount;
 
-        private IList<MsgRecord> bufferMsgRecords1 = new List<MsgRecord>();
-        private IList<MsgRecord> bufferMsgRecords2 = new List<MsgRecord>();
+        private IDictionary<string, MsgRecord> bufferMsgRecords1 = new Dictionary<string, MsgRecord>();
+        private IDictionary<string, MsgRecord> bufferMsgRecords2 = new Dictionary<string, MsgRecord>();
         private bool UsingTagForMsgRecord = false;
 
-        private IList<MsgRecordModel> bufferSendMsgRecords1 = new List<MsgRecordModel>();
-        private IList<MsgRecordModel> bufferSendMsgRecords2 = new List<MsgRecordModel>();
-        private bool UsingTagForSendMsgRecord = false;
-
-        private IList<MsgRecordModel> exeSendMsgRecords1Buffer = new List<MsgRecordModel>();
+        private IDictionary<string, MsgRecordModel> exeSendMsgRecords1Buffer = new Dictionary<string,MsgRecordModel>();
 
         private Thread mainThread = null;
 
@@ -44,58 +41,94 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
         private const int _maxSize = 1024;
         private const int _maxSendConnections = 10;
 
+        private const int _saveDataDelay = 1000;
+        private const int _sendMsgDelay = 100;
+        private const int _retryCount = 2;
 
         public BufferContorl()
         {
             msgRecordService = ObjectContainerFactory.CurrentContainer.Resolver<IMsgRecordService>();
         }
 
-        public void SendMsgToMCS(MCSServer mcsServer,MsgRecord msgRecord)
+        public void AddMsgIntoSendBuffer(MCSServer mcsServer, MsgRecord msgRecord)
         {
-            String strmsg= CommonFlag.F_MCSVerfiyMDSMSG + CommonVariables.serializer.Serialize(msgRecord);
-            asyncSocketClient.SendMsg(mcsServer.MCS_IP, mcsServer.MCS_Port, strmsg, msgRecord.MsgID, HandMCSReturnData);
+            if (!exeSendMsgRecords1Buffer.ContainsKey(msgRecord.MsgID))
+            {
+                MsgRecordModel msgRecordmodel = new MsgRecordModel();
+                msgRecordmodel.IsSended = msgRecord.IsSended;
+                msgRecordmodel.MCS_IP = mcsServer.MCS_IP;
+                msgRecordmodel.MCS_Port = mcsServer.MCS_Port;
+                msgRecordmodel.MDS_IP = CommonVariables.MDSIP;
+                msgRecordmodel.MDS_Port = CommonVariables.MDSPort;
+                msgRecordmodel.MsgContent = msgRecord.MsgContent;
+                msgRecordmodel.MsgID = msgRecord.MsgID;
+                msgRecordmodel.MsgRecipientGroupID = msgRecord.MsgRecipientGroupID;
+                msgRecordmodel.MsgRecipientObjectID = msgRecord.MsgRecipientObjectID;
+                msgRecordmodel.MsgSenderName = msgRecord.MsgSenderName;
+                msgRecordmodel.MsgSenderObjectID = msgRecord.MsgSenderObjectID;
+                msgRecordmodel.MsgType = msgRecord.MsgType;
+                msgRecordmodel.reTryCount = 1;
+                msgRecordmodel.SendTime = msgRecord.SendTime;
+                msgRecordmodel.ExeSendTime = DateTime.Now.ToString(CommonFlag.F_DateTimeFormat);
 
-            MsgRecordModel msgRecordmodel =new MsgRecordModel();
-            msgRecordmodel.IsSended = msgRecord.IsSended;
-            msgRecordmodel.MCS_IP = mcsServer.MCS_IP;
-            msgRecordmodel.MCS_Port = mcsServer.MCS_Port;
-            msgRecordmodel.MDS_IP = CommonVariables.MDSIP;
-            msgRecordmodel.MDS_Port =CommonVariables.MDSPort;
-            msgRecordmodel.MsgContent = msgRecord.MsgContent;
-            msgRecordmodel.MsgID = msgRecord.MsgID;
-            msgRecordmodel.MsgRecipientGroupID = msgRecord.MsgRecipientGroupID;
-            msgRecordmodel.MsgRecipientObjectID =msgRecord.MsgRecipientObjectID;
-            msgRecordmodel.MsgSenderName = msgRecord.MsgSenderName;
-            msgRecordmodel.MsgSenderObjectID = msgRecord.MsgSenderObjectID;
-            msgRecordmodel.MsgType =msgRecord.MsgType;
-            msgRecordmodel.reTryCount = 0;
-            msgRecordmodel.SendTime = msgRecord.SendTime;
-            exeSendMsgRecords1Buffer.Add(msgRecordmodel);
+                CommonVariables.Listener.SendMsg(msgRecordmodel.MCS_IP, msgRecordmodel.MCS_Port,
+                    CommonFlag.F_MCSVerfiyMDSMSG + JsonConvert.SerializeObject(msgRecord), msgRecordmodel.MsgID);
+                exeSendMsgRecords1Buffer.Add(msgRecordmodel.MsgID, msgRecordmodel);
+            }
         }
 
-        private string HandMCSReturnData(string returnData, bool isError)
+        private void SendMsgToMCS(MsgRecordModel msgRecordmodel)
         {
-            if(isError)
-            {
+            CommonVariables.Listener.SendMsg(msgRecordmodel.MCS_IP, msgRecordmodel.MCS_Port,
+                CommonFlag.F_MCSVerfiyMDSMSG + JsonConvert.SerializeObject(ModelTransfor(msgRecordmodel)), msgRecordmodel.MsgID);
+        }
 
+        private MsgRecord ModelTransfor(MsgRecordModel msgRecordModel)
+        {
+            MsgRecord msgRecord = new MsgRecord();
+            msgRecord.IsSended = msgRecordModel.IsSended;
+            msgRecord.MsgContent = msgRecordModel.MsgContent;
+            msgRecord.MsgID = msgRecordModel.MsgContent;
+            msgRecord.MsgRecipientGroupID = msgRecordModel.MsgRecipientGroupID;
+            msgRecord.MsgRecipientObjectID = msgRecordModel.MsgRecipientObjectID;
+            msgRecord.MsgSenderName = msgRecordModel.MsgSenderName;
+            msgRecord.MsgSenderObjectID = msgRecordModel.MsgSenderObjectID;
+            msgRecord.MsgType = msgRecordModel.MsgType;
+            msgRecord.SendTime = msgRecordModel.SendTime;
+
+            return msgRecord;
+        }
+
+        private void HandMCSMsgReturnData(string returnData)
+        {
+            if (!string.IsNullOrEmpty(returnData))
+            {
+                if (exeSendMsgRecords1Buffer.ContainsKey(returnData))
+                {
+                    exeSendMsgRecords1Buffer.Remove(returnData);
+                }
             }
-            return string.Empty;
         }
 
         public void AddMSgRecordIntoBuffer(MsgRecord msgRecord)
         {
-            GetUsingMsgRecordBuffer.Add(msgRecord);
+            if (!GetUsingMsgRecordBuffer.ContainsKey(msgRecord.MsgID))
+            {
+                GetUsingMsgRecordBuffer.Add(msgRecord.MsgID, msgRecord);
+            }
         }
 
 
-        private IList<MsgRecord> GetUsingMsgRecordBuffer
+        #region buffer manager
+
+        private IDictionary<string, MsgRecord> GetUsingMsgRecordBuffer
         {
             get{
                 return UsingTagForMsgRecord ? bufferMsgRecords1 : bufferMsgRecords2;
             }
         }
 
-        private IList<MsgRecord> GetUnUsingMsgRecordBuffer
+        private IDictionary<string, MsgRecord> GetUnUsingMsgRecordBuffer
         {
             get
             {
@@ -103,21 +136,23 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             }
         }
 
-        private IList<MsgRecordModel> GetUsingSendMsgRecordBuffer
-        {
-            get
-            {
-                return UsingTagForSendMsgRecord ? bufferSendMsgRecords1 : bufferSendMsgRecords2;
-            }
-        }
+        //private IList<MsgRecordModel> GetUsingSendMsgRecordBuffer
+        //{
+        //    get
+        //    {
+        //        return UsingTagForSendMsgRecord ? bufferSendMsgRecords1 : bufferSendMsgRecords2;
+        //    }
+        //}
 
-        private IList<MsgRecordModel> GetUnUsingSendMsgRecordBuffer
-        {
-            get
-            {
-                return UsingTagForSendMsgRecord ? bufferSendMsgRecords2 : bufferSendMsgRecords1;
-            }
-        }
+        //private IList<MsgRecordModel> GetUnUsingSendMsgRecordBuffer
+        //{
+        //    get
+        //    {
+        //        return UsingTagForSendMsgRecord ? bufferSendMsgRecords2 : bufferSendMsgRecords1;
+        //    }
+        //}
+
+        #endregion
 
 
         public IList<MsgRecord> GetMSG(ClientModel clientModel)
@@ -134,6 +169,10 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             ThreadStart threadStart = new ThreadStart(MainSaveRecordThread);
             Thread thread = new Thread(threadStart);
             thread.Start();
+
+            threadStart = new ThreadStart(MainHandErrorRecordThread);
+            thread = new Thread(threadStart);
+            thread.Start();
         }
 
         public void StopMainThread()
@@ -141,13 +180,13 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             IsRunning = false;
             if (GetUsingMsgRecordBuffer.Count > 0)
             {
-                msgRecordService.BatchSave(GetUsingMsgRecordBuffer);
+                msgRecordService.BatchSave(GetUsingMsgRecordBuffer.Values.ToList());
                 GetUsingMsgRecordBuffer.Clear();
             }
 
             if (GetUnUsingMsgRecordBuffer.Count > 0)
             {
-                msgRecordService.BatchSave(GetUnUsingMsgRecordBuffer);
+                msgRecordService.BatchSave(GetUsingMsgRecordBuffer.Values.ToList());
                 GetUnUsingMsgRecordBuffer.Clear();
             }
         }
@@ -164,11 +203,11 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
                     {
                         UsingTagForMsgRecord = !UsingTagForMsgRecord;
 
-                        msgRecordService.BatchSave(GetUnUsingMsgRecordBuffer);
+                        msgRecordService.BatchSave(GetUnUsingMsgRecordBuffer.Values.ToList());
 
                         GetUnUsingMsgRecordBuffer.Clear();
                     }
-                    Thread.Sleep(100);
+                    Thread.Sleep(_saveDataDelay);
                 }
             }
             catch (Exception ex)
@@ -177,9 +216,42 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             }
         }
 
-        private void MainSendRecordThread()
+        private void MainHandErrorRecordThread()
         {
+            try
+            {
+                while (IsRunning)
+                {
+                    if (exeSendMsgRecords1Buffer.Count > 0)
+                    {
+                        IList<string> tempMsgIDs = (from aa in exeSendMsgRecords1Buffer.Values
+                                                    where aa.ExeSendTime.CompareTo(DateTime.Now.AddMilliseconds(-2).ToString(CommonFlag.F_DateTimeFormat)) <= 0
+                                                    select aa.MsgID).ToList();
 
+                        if (tempMsgIDs != null && tempMsgIDs.Count > 0)
+                        {
+                            foreach (string tempMsgID in tempMsgIDs)
+                            {
+                                if (exeSendMsgRecords1Buffer[tempMsgID].reTryCount < _retryCount)
+                                {
+                                    exeSendMsgRecords1Buffer[tempMsgID].reTryCount++;
+                                    exeSendMsgRecords1Buffer[tempMsgID].ExeSendTime = DateTime.Now.ToString(CommonFlag.F_DateTimeFormat);
+                                    SendMsgToMCS(exeSendMsgRecords1Buffer[tempMsgID]);
+                                }
+                                else
+                                {
+                                    exeSendMsgRecords1Buffer.Remove(tempMsgID);
+                                }
+                            }
+                        }
+                    }
+                    Thread.Sleep(_sendMsgDelay);
+                }
+            }
+            catch (Exception ex)
+            {
+                CommonVariables.LogTool.Log(ex.Message + ex.StackTrace);
+            }
         }
     }
 
