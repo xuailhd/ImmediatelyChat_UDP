@@ -77,7 +77,7 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             }
         }
 
-        private void SendMsgToMCS(MsgRecordModel msgRecordmodel)
+        public void SendMsgToMCS(MsgRecordModel msgRecordmodel)
         {
             CommonVariables.Listener.SendMsg(msgRecordmodel.MCS_IP, msgRecordmodel.MCS_Port,
                 CommonFlag.F_MCSVerfiyMDSMSG + JsonConvert.SerializeObject(ModelTransfor(msgRecordmodel)), msgRecordmodel.MsgID);
@@ -155,12 +155,37 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
         #endregion
 
 
-        public IList<MsgRecord> GetMSG(ClientModel clientModel)
+        public void GetMSG(IMsgRecordService _msgRecordService, ClientModel clientModel)
         {
+            MsgRecordModel msgRecordmodel = null;
             MsgRecordQuery query = new MsgRecordQuery();
             query.MsgRecipientObjectID = clientModel.ObjectID;
             query.MsgRecordtime = clientModel.LatestTime;
-            return msgRecordService.LoadMsgRecord(query);
+            IList<MsgRecord> msgRecords = _msgRecordService.LoadMsgRecord(query);
+
+            foreach(MsgRecord msgRecord in msgRecords)
+            {
+                msgRecordmodel = new MsgRecordModel();
+                msgRecordmodel.IsSended = msgRecord.IsSended;
+                msgRecordmodel.MCS_IP = clientModel.MCS_IP;
+                msgRecordmodel.MCS_Port = clientModel.MCS_Port;
+                msgRecordmodel.MDS_IP = CommonVariables.MDSIP;
+                msgRecordmodel.MDS_Port = CommonVariables.MDSPort;
+                msgRecordmodel.MsgContent = msgRecord.MsgContent;
+                msgRecordmodel.MsgID = msgRecord.MsgID;
+                msgRecordmodel.MsgRecipientGroupID = msgRecord.MsgRecipientGroupID;
+                msgRecordmodel.MsgRecipientObjectID = msgRecord.MsgRecipientObjectID;
+                msgRecordmodel.MsgSenderName = msgRecord.MsgSenderName;
+                msgRecordmodel.MsgSenderObjectID = msgRecord.MsgSenderObjectID;
+                msgRecordmodel.MsgType = msgRecord.MsgType;
+                msgRecordmodel.reTryCount = 1;
+                msgRecordmodel.SendTime = msgRecord.SendTime;
+                msgRecordmodel.ExeSendTime = DateTime.Now.ToString(CommonFlag.F_DateTimeFormat);
+
+                CommonVariables.Listener.SendMsg(msgRecordmodel.MCS_IP, msgRecordmodel.MCS_Port,
+                    CommonFlag.F_MCSVerfiyMDSMSG + JsonConvert.SerializeObject(msgRecord), msgRecordmodel.MsgID);
+                exeSendMsgRecords1Buffer.Add(msgRecordmodel.MsgID, msgRecordmodel);
+            }
         }
 
         public void StartMainThread()
@@ -251,6 +276,19 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             catch (Exception ex)
             {
                 CommonVariables.LogTool.Log(ex.Message + ex.StackTrace);
+            }
+        }
+
+        private void HandleMCSMSGFB(string returnData)
+        {
+            if (!string.IsNullOrEmpty(returnData))
+            {
+                MsgRecordModel tempmodel = exeSendMsgRecords1Buffer.Values.Single(t => t.MsgID == returnData);
+
+                if (tempmodel != null)
+                {
+                    exeSendMsgRecords1Buffer.Remove(tempmodel.MsgID);
+                }
             }
         }
     }

@@ -84,12 +84,12 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
         private string HandlePSCallMDSStart(string data,MDSListenerToken token)
         {
             data = data.Remove(0, CommonFlag.F_PSCallMDSStart.Length);
-            IList<MCSServer> mcsServers = CommonVariables.serializer.Deserialize<IList<MCSServer>>(data.Substring(0, data.IndexOf("&&")));
+            IList<MCSServer> mcsServers = JsonConvert.DeserializeObject<IList<MCSServer>>(data.Substring(0, data.IndexOf("&&")));
 
             if (mcsServers != null && mcsServers.Count > 0)
             {
                 data = data.Remove(0, data.IndexOf("&&") + 2);
-                CommonVariables.ArrangeStr = CommonVariables.serializer.Deserialize<MDSServer>(data).ArrangeStr;
+                CommonVariables.ArrangeStr = JsonConvert.DeserializeObject<MDSServer>(data).ArrangeStr;
                 CommonVariables.OperateFile.SaveConfig(CommonVariables.ConfigFilePath, CommonFlag.F_ArrangeChars, CommonVariables.ArrangeStr);
                 CommonVariables.LogTool.Log("ArrangeStr:" + CommonVariables.ArrangeStr);
                 CommonVariables.LogTool.Log("MCS count:" + mcsServers.Count);
@@ -106,36 +106,7 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
 
         private string HandleMDSReciveMCSFBMSG(string data,MDSListenerToken token)
         {
-            string tempStr = data.Remove(0, CommonFlag.F_MDSReciveMCSFBMSG.Length);
-
-            if (token.Models != null && token.Models.Count > 0)
-            {
-                if (token.Models[0].MsgID == tempStr)
-                {
-                    token.Models.RemoveAt(0);
-                }
-                else
-                {
-                    for (int i = 1; i < token.Models.Count; i++)
-                    {
-                        if (token.Models[i].MsgID == tempStr)
-                        {
-                            token.Models.RemoveAt(i);
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (token.Models != null && token.Models.Count > 0)
-            {
-                return CommonFlag.F_MCSVerfiyMDSMSG + CommonVariables.serializer.Serialize(token.Models[0]);
-            }
-            else
-            {
-                return string.Empty;
-            }
-
+            
         }
 
         private string HandleMDSVerifyMCSMSG(string data,MDSListenerToken token)
@@ -151,8 +122,7 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
                     MCSServer server = CommonVariables.CommonFunctions.FindMCSServer(CommonVariables.MCSServers, 
                         msgReocod.MsgRecipientObjectID);
 
-                    CommonVariables.MessageContorl.SendMsgToMCS(server, msgReocod);
-                    return CommonFlag.F_MCSVerfiyMDSMSG +  msgReocod.MsgID;
+                    CommonVariables.MessageContorl.AddMsgIntoSendBuffer(server, msgReocod);
                 }
             }
             return string.Empty;
@@ -167,14 +137,9 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             {
                 if (!string.IsNullOrEmpty(clientModel.ObjectID))
                 {
-
-                    token.Models = CommonVariables.MessageContorl.GetMSG(token.MsgRecordService, clientModel);
-                    //CommonVariables.LogTool.Log("recive mcs get msg:" + getMsgModel.LatestTime + "/" + getMsgModel.ObjectID);
-                    if (token.Models != null && token.Models.Count > 0)
-                    {
-                        //CommonVariables.LogTool.Log("token.Models.Count:" + token.Models.Count.ToString());
-                        return CommonFlag.F_MCSVerfiyMDSMSG + JsonConvert.SerializeObject(token.Models[0]);
-                    }
+                    clientModel.MCS_IP = token.IP;
+                    clientModel.MCS_Port = token.Port;
+                    CommonVariables.MessageContorl.GetMSG(token.MsgRecordService, clientModel);
                 }
             }
             return string.Empty;
