@@ -138,20 +138,20 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
         {
             string tempStr = data.Remove(0, CommonFlag.F_MCSVerifySendUAMsgFB.Length);
 
-            if (!string.IsNullOrEmpty(tempStr))
-            {
-                CommonVariables.MessageContorl.HandlerUAMsgReturnData(tempStr);
-            }
+            //if (!string.IsNullOrEmpty(tempStr))
+            //{
+            CommonVariables.MessageContorl.HandlerUAMsgReturnData(tempStr);
+            //}
             return string.Empty;
         }
         private string HandleMCSVerfiyFBMDSMSG(string data, MCSListenerUDPToken token)
         {
             string tempStr = data.Remove(0, CommonFlag.F_MCSVerfiyFBMDSMSG.Length);
 
-            if (!string.IsNullOrEmpty(tempStr))
-            {
-                CommonVariables.MessageContorl.HandlerMDSmsgReturnData(tempStr);
-            }
+            //if (!string.IsNullOrEmpty(tempStr))
+            //{
+            CommonVariables.MessageContorl.HandlerMDSMsgReturnData(tempStr);
+            //}
             return string.Empty;
         }
         private string HandleMCSVerfiyMDSMSG(string data, MCSListenerUDPToken token)
@@ -213,8 +213,7 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
                         {
                             clientModel.Client_IP = token.IP;
                             clientModel.Client_Port = token.Port;
-                            CommonVariables.MessageContorl.AddClientModel(clientModel);
-                            CommonVariables.MessageContorl.SendGetMsgToMDS(clientModel);
+                            CommonVariables.MessageContorl.UpdateClientModel(clientModel);
                             return "ok";
                         }                        
                     }

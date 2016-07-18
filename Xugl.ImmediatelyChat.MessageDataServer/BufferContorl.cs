@@ -279,15 +279,18 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             }
         }
 
-        private void HandleMCSMSGFB(string returnData)
+        public void HandleMCSMSGFB(string returnData)
         {
             if (!string.IsNullOrEmpty(returnData))
             {
-                MsgRecordModel tempmodel = exeSendMsgRecords1Buffer.Values.Single(t => t.MsgID == returnData);
-
-                if (tempmodel != null)
+                if(exeSendMsgRecords1Buffer.ContainsKey(returnData))
                 {
-                    exeSendMsgRecords1Buffer.Remove(tempmodel.MsgID);
+                    MsgRecordModel tempmodel = exeSendMsgRecords1Buffer[returnData];
+
+                    if (tempmodel != null)
+                    {
+                        exeSendMsgRecords1Buffer.Remove(tempmodel.MsgID);
+                    }
                 }
             }
         }

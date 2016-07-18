@@ -169,6 +169,8 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                                 contactData.IsDelete = contactGroup.IsDelete;
                                 contactData.UpdateTime = contactGroup.UpdateTime;
                                 contactData.DataType = 2;
+
+
                             }
                             else
                             {
@@ -193,9 +195,8 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                     contactData.IsDelete = contactGroup.IsDelete;
                     contactData.DataType = 2;
                 }
-                return JsonConvert.SerializeObject(contactData);
+                CommonVariables.UAInfoContorl.AddContactDataIntoBuffer(contactData, token.IP, token.Port, ServerType.UA);
             }
-
             return string.Empty;
         }
 
@@ -217,7 +218,6 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                 tempContactData.LatestTime = contactPerson.LatestTime;
                 tempContactData.ObjectID = contactPerson.ObjectID;
                 tempContactData.UpdateTime = contactPerson.UpdateTime;
-                tempContactData.ContactDataID = Guid.NewGuid().ToString();
                 tempContactData.DataType = 0;
                 tempContactDatas.Add(tempContactData);
 
@@ -235,7 +235,6 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                         tempContactData.ObjectID = contactPersonList.ObjectID;
                         tempContactData.IsDelete = contactPersonList.IsDelete;
                         tempContactData.UpdateTime = contactPersonList.UpdateTime;
-                        tempContactData.ContactDataID = Guid.NewGuid().ToString();
                         tempContactData.DataType = 1;
                         tempContactDatas.Add(tempContactData);
                     }
@@ -249,7 +248,6 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                         tempContactData.GroupName = contactGroup.GroupName;
                         tempContactData.IsDelete = contactGroup.IsDelete;
                         tempContactData.UpdateTime = contactGroup.UpdateTime;
-                        tempContactData.ContactDataID = Guid.NewGuid().ToString();
                         tempContactData.DataType = 2;
                         tempContactData.ObjectID = objectID;
                         tempContactDatas.Add(tempContactData);
@@ -264,7 +262,6 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                         tempContactData.ContactPersonObjectID = contactGroupSub.ContactPersonObjectID;
                         tempContactData.IsDelete = contactGroupSub.IsDelete;
                         tempContactData.UpdateTime = contactGroupSub.UpdateTime;
-                        tempContactData.ContactDataID = Guid.NewGuid().ToString();
                         tempContactData.DataType = 3;
                         tempContactData.ObjectID = objectID;
                         tempContactDatas.Add(tempContactData);
@@ -457,7 +454,8 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
             {
                 clientStatusModel.Client_IP = token.IP;
                 clientStatusModel.Client_Port = token.Port;
-                CommonVariables.UAInfoContorl.UpdateClientModel(clientStatusModel);
+                MCSServer server = CommonVariables.CommonFunctions.FindMCSServer(CommonVariables.MCSServers, clientStatusModel.ObjectID);
+                CommonVariables.UAInfoContorl.UpdateClientModel(clientStatusModel, server);
                 CommonVariables.UAInfoContorl.AddContactDataIntoBuffer(contactDatas, clientStatusModel.Client_IP, clientStatusModel.Client_Port, ServerType.MCS);
 
                 return contactDatas.Count.ToString();
@@ -500,7 +498,7 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
 
             base.SendMsg(server.MCS_IP,server.MCS_Port,
                 CommonFlag.F_MCSReceiveMMSUAUpdateTime + JsonConvert.SerializeObject(clientStatusModel),clientStatusModel.ObjectID);
-
+            CommonVariables.UAInfoContorl.UpdateClientModel(clientStatusModel, server);
             //Send MCS
             return JsonConvert.SerializeObject(clientStatusModel);
         }
@@ -530,7 +528,6 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                 foreach (ContactPerson entity in entitys)
                 {
                     contactData = new ContactData();
-                    contactData.ContactDataID = Guid.NewGuid().ToString();
                     contactData.ContactName = entity.ContactName;
                     contactData.ObjectID = entity.ObjectID;
                     contactData.ImageSrc = entity.ImageSrc;
@@ -553,7 +550,6 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                 foreach (ContactGroup entity in entitys)
                 {
                     contactData = new ContactData();
-                    contactData.ContactDataID = Guid.NewGuid().ToString();
                     contactData.GroupObjectID = entity.GroupObjectID;
                     contactData.GroupName = entity.GroupName;
                     contactDatas.Add(contactData);

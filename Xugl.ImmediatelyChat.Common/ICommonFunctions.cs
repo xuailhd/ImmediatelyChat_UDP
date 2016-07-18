@@ -13,6 +13,6 @@ namespace Xugl.ImmediatelyChat.Common
 
         MMSServer FindMMSServer(IList<MMSServer> servers, String objectID);
 
-        MDSServer FindMMSServer(IList<MDSServer> servers, String objectID);
+        MDSServer FindMDSServer(IList<MDSServer> servers, String objectID);
     }
 }

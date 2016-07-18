@@ -17,7 +17,7 @@ using Xugl.ImmediatelyChat.SocketEngine;
 namespace Xugl.ImmediatelyChat.MessageDataServer
 {
 
-    internal class UDPSocketListener : AsyncSocketListenerUDP<MDSListenerToken>
+    public class UDPSocketListener : AsyncSocketListenerUDP<MDSListenerToken>
     {
         public UDPSocketListener()
             : base(1024, 50,20, CommonVariables.LogTool)
@@ -106,7 +106,9 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
 
         private string HandleMDSReciveMCSFBMSG(string data,MDSListenerToken token)
         {
-            
+            data = data.Remove(0, CommonFlag.F_MDSReciveMCSFBMSG.Length);
+            CommonVariables.MessageContorl.HandleMCSMSGFB(data);
+            return string.Empty;
         }
 
         private string HandleMDSVerifyMCSMSG(string data,MDSListenerToken token)
@@ -115,7 +117,7 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             MsgRecord msgReocod = JsonConvert.DeserializeObject<MsgRecord>(tempStr);
             if (msgReocod != null)
             {
-                if (!string.IsNullOrEmpty(msgReocod.MsgSenderObjectID))
+                if (!string.IsNullOrEmpty(msgReocod.MsgRecipientObjectID))
                 {
                     CommonVariables.MessageContorl.AddMSgRecordIntoBuffer(msgReocod);
 
@@ -124,6 +126,7 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
 
                     CommonVariables.MessageContorl.AddMsgIntoSendBuffer(server, msgReocod);
                 }
+                return CommonFlag.F_MCSVerfiyFBMDSMSG + msgReocod.MsgID;
             }
             return string.Empty;
         }

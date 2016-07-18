@@ -24,12 +24,11 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
         //private AsyncSocketClientUDP asyncSocketClient;
         private readonly IContactPersonService contactPersonService;
 
-        private int _maxSize = 1024;
         private IList<ContactDataWithServer> contactDataBuffer1 = new List<ContactDataWithServer>();
         private IList<ContactDataWithServer> contactDataBuffer2 = new List<ContactDataWithServer>();
         private bool UsingTag = false;
 
-        private IList<ContactDataWithServer> exeContactDataBuffer = new List<ContactDataWithServer>();
+        private IDictionary<string, ContactDataWithServer> exeContactDataBuffer = new Dictionary<string, ContactDataWithServer>();
         private IDictionary<string, ClientModel> clientModels = new Dictionary<string, ClientModel>();
 
         private int sendContactDataDelay = 100;
@@ -51,17 +50,9 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                 return UsingTag ? contactDataBuffer2 : contactDataBuffer1;
             }
         }
-
-        private IList<ContactDataWithServer> GetExeContactDataBuffer
-        {
-            get
-            {
-                return exeContactDataBuffer;
-            }
-        }
         #endregion
 
-        public void UpdateClientModel(ClientModel clientModel)
+        public void UpdateClientModel(ClientModel clientModel,MCSServer server)
         {
             if(clientModels.ContainsKey(clientModel.ObjectID))
             {
@@ -69,7 +60,6 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                 clientModels[clientModel.ObjectID].Client_Port = clientModel.Client_Port;
                 if(string.IsNullOrEmpty(clientModels[clientModel.ObjectID].MCS_IP))
                 {
-                    MCSServer server = CommonVariables.CommonFunctions.FindMCSServer(CommonVariables.MCSServers, clientModel.ObjectID);
                     clientModels[clientModel.ObjectID].MCS_IP = server.MCS_IP;
                     clientModels[clientModel.ObjectID].MCS_Port = server.MCS_Port;
                 }
@@ -78,7 +68,6 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
             {
                 if(string.IsNullOrEmpty(clientModel.MCS_IP))
                 {
-                    MCSServer server = CommonVariables.CommonFunctions.FindMCSServer(CommonVariables.MCSServers, clientModel.ObjectID);
                     clientModel.MCS_IP = server.MCS_IP;
                     clientModel.MCS_Port = server.MCS_Port;
                 }
@@ -110,6 +99,7 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
             for (int i = 0; i < contactDatas.Count; i++)
             {
                 contactDataWithServer = new ContactDataWithServer();
+                contactDatas[i].ContactDataID = Guid.NewGuid().ToString();
                 contactDataWithServer.ContactData = contactDatas[i];
                 contactDataWithServer.ServerIP = serverIP;
                 contactDataWithServer.ServerPort = port;
@@ -127,12 +117,13 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                 return;
             }
 
-            if (contactData == null || String.IsNullOrEmpty(contactData.ContactDataID))
+            if (contactData == null)
             {
                 return;
             }
 
             contactDataWithServer = new ContactDataWithServer();
+            contactData.ContactDataID = Guid.NewGuid().ToString();
             contactDataWithServer.ContactData = contactData;
             contactDataWithServer.ServerIP = serverIP;
             contactDataWithServer.ServerPort = port;
@@ -176,7 +167,7 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
                             default:
                                 continue;
                         }
-                        exeContactDataBuffer.Add(contactDataWithServer);
+                        exeContactDataBuffer.Add(contactDataWithServer.ContactData.ContactDataID,contactDataWithServer);
                         GetUnUsingContactDataBuffer.RemoveAt(0);
                     }
                 }
@@ -186,15 +177,12 @@ namespace Xugl.ImmediatelyChat.MessageMainServer
 
         public void HandlerSendContactDataReturnData(string returnData)
         {
-            ContactDataWithServer contactDataWithServer = exeContactDataBuffer.Where(t => t.ContactData.ContactDataID == returnData).SingleOrDefault();
-            if (contactDataWithServer == null)
+            if(!string.IsNullOrEmpty(returnData))
             {
-                return;
-            }
-            exeContactDataBuffer.Remove(contactDataWithServer);
-            if (contactDataWithServer != null)
-            {
-                GetUsingContactDataBuffer.Add(contactDataWithServer);
+                if(exeContactDataBuffer.ContainsKey(returnData))
+                {
+                    exeContactDataBuffer.Remove(returnData);
+                }
             }
         }
     }
