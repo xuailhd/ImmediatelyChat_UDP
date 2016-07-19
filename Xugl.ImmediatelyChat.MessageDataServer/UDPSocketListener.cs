@@ -16,8 +16,28 @@ using Xugl.ImmediatelyChat.SocketEngine;
 
 namespace Xugl.ImmediatelyChat.MessageDataServer
 {
+    public class MDSListenerUDPToken : AsyncUserToken
+    {
+        private readonly IMsgRecordService _msgRecordService;
+        public MDSListenerUDPToken()
+        {
+            _msgRecordService = ObjectContainerFactory.CurrentContainer.Resolver<IMsgRecordService>();
+        }
 
-    public class UDPSocketListener : AsyncSocketListenerUDP<MDSListenerToken>
+        public MsgRecord Model { get; set; }
+
+        public string UAObjectID { get; set; }
+
+        public IMsgRecordService MsgRecordService
+        {
+            get
+            {
+                return _msgRecordService;
+            }
+        }
+    }
+
+    public class UDPSocketListener : AsyncSocketListenerUDP<MDSListenerUDPToken>
     {
         public UDPSocketListener()
             : base(1024, 50,20, CommonVariables.LogTool)
@@ -25,7 +45,7 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             
         }
 
-        protected override void HandleError(MDSListenerToken token)
+        protected override void HandleError(MDSListenerUDPToken token)
         {
             if (token.Models != null && token.Models.Count > 0)
             {
@@ -34,7 +54,7 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             }
         }
 
-        protected override string HandleRecivedMessage(string inputMessage, MDSListenerToken token)
+        protected override string HandleRecivedMessage(string inputMessage, MDSListenerUDPToken token)
         {
             if (string.IsNullOrEmpty(inputMessage))
             {
@@ -81,7 +101,7 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             return string.Empty;
         }
 
-        private string HandlePSCallMDSStart(string data,MDSListenerToken token)
+        private string HandlePSCallMDSStart(string data, MDSListenerUDPToken token)
         {
             data = data.Remove(0, CommonFlag.F_PSCallMDSStart.Length);
             IList<MCSServer> mcsServers = JsonConvert.DeserializeObject<IList<MCSServer>>(data.Substring(0, data.IndexOf("&&")));
@@ -104,14 +124,14 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             return string.Empty;
         }
 
-        private string HandleMDSReciveMCSFBMSG(string data,MDSListenerToken token)
+        private string HandleMDSReciveMCSFBMSG(string data, MDSListenerUDPToken token)
         {
             data = data.Remove(0, CommonFlag.F_MDSReciveMCSFBMSG.Length);
             CommonVariables.MessageContorl.HandleMCSMSGFB(data);
             return string.Empty;
         }
 
-        private string HandleMDSVerifyMCSMSG(string data,MDSListenerToken token)
+        private string HandleMDSVerifyMCSMSG(string data, MDSListenerUDPToken token)
         {
             string tempStr = data.Remove(0, CommonFlag.F_MDSVerifyMCSMSG.Length);
             MsgRecord msgReocod = JsonConvert.DeserializeObject<MsgRecord>(tempStr);
@@ -131,7 +151,7 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             return string.Empty;
         }
 
-        private string HandleMDSVerifyMCSGetMSG(string data,MDSListenerToken token)
+        private string HandleMDSVerifyMCSGetMSG(string data, MDSListenerUDPToken token)
         {
             string tempStr = data.Remove(0, CommonFlag.F_MDSVerifyMCSGetMSG.Length);
             ClientModel clientModel = JsonConvert.DeserializeObject<ClientModel>(tempStr);

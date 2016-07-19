@@ -37,7 +37,7 @@ namespace Xugl.ImmediatelyChat.Common
             return server;
         }
 
-        public MDSServer FindMMSServer(IList<MDSServer> servers, String objectID)
+        public MDSServer FindMDSServer(IList<MDSServer> servers, String objectID)
         {
             MDSServer server = null;
 

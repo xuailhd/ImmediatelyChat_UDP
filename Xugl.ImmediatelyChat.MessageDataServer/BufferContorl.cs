@@ -41,8 +41,8 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
         private const int _maxSize = 1024;
         private const int _maxSendConnections = 10;
 
-        private const int _saveDataDelay = 1000;
-        private const int _sendMsgDelay = 100;
+        private const int _saveDataDelay = 100;
+        private const int _sendMsgDelay = 50;
         private const int _retryCount = 2;
 
         public BufferContorl()

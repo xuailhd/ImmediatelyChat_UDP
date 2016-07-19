@@ -62,7 +62,6 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SocketAsyncHandler.cs" />
-    <Compile Include="SocketListener.cs" />
     <Compile Include="SocketService.cs" />
     <Compile Include="UDPSocketListener.cs" />
     <EmbeddedResource Include="FrmMain.resx">
