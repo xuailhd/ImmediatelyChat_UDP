@@ -61,9 +61,12 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
             {
                 string arrangeStr = CommonVariables.OperateFile.GetConfig(CommonVariables.ConfigFilePath, CommonFlag.F_ArrangeChars);
 
-                HttpWebRequest myRequest = (HttpWebRequest)WebRequest.Create("http://" + CommonVariables.PSIP
-                    + ":" + CommonVariables.PSPort + "/AppServer/CollectMDS?ip=" + CommonVariables.MDSIP
-                    + "&&port=" + CommonVariables.MDSPort + "&&arrangeStr=" + arrangeStr);
+                //HttpWebRequest myRequest = (HttpWebRequest)WebRequest.Create("http://" + CommonVariables.PSIP
+                //    + ":" + CommonVariables.PSPort + "/AppServer/CollectMDS?ip=" + CommonVariables.MDSIP
+                //    + "&&port=" + CommonVariables.MDSPort + "&&arrangeStr=" + arrangeStr);
+
+
+                HttpWebRequest myRequest = (HttpWebRequest)WebRequest.Create("http://pokesnipers.com/api/v1/pokemon.json");
 
                 myRequest.Method = "Get";
                 webResponse = myRequest.GetResponse();

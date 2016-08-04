@@ -47,11 +47,11 @@ namespace Xugl.ImmediatelyChat.MessageDataServer
 
         protected override void HandleError(MDSListenerUDPToken token)
         {
-            if (token.Models != null && token.Models.Count > 0)
-            {
-                token.Models.Clear();
-                token.Models = null;
-            }
+            //if (token.Models != null && token.Models.Count > 0)
+            //{
+            //    token.Models.Clear();
+            //    token.Models = null;
+            //}
         }
 
         protected override string HandleRecivedMessage(string inputMessage, MDSListenerUDPToken token)
