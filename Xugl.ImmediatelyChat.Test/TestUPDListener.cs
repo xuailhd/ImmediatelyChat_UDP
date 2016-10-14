@@ -15,7 +15,7 @@ namespace Xugl.ImmediatelyChat.Test
     public class TestUPDListener:ServerInstance
     {
         private BufferManager m_bufferManager;
-        public TestUPDListener(string ip,int port):base(1200,100,4,CommonVariables.LogTool)
+        public TestUPDListener(string ip,int port):base(6200,100,4,CommonVariables.LogTool)
         {
             base.StartMainThread(ip, port);
         }
@@ -23,6 +23,7 @@ namespace Xugl.ImmediatelyChat.Test
         protected override byte[] HandleRecivedMessage(byte[] data)
         {
             CommonVariables.LogTool.Log("来数据了");
+            File.WriteAllText("F:\\textfolder\\" + Guid.NewGuid().ToString("N"), DateTime.Now.ToString(CommonFlag.F_DateTimeFormat));
             File.WriteAllBytes("F:\\textfolder\\" + Guid.NewGuid().ToString("N"), data);
             return null;
         }
@@ -33,6 +34,7 @@ namespace Xugl.ImmediatelyChat.Test
 
         public void SendFile(string path, string ip, int port)
         {
+            CommonVariables.LogTool.Log(DateTime.Now.ToString(CommonFlag.F_DateTimeFormat));
             base.SendMsg(Guid.NewGuid().ToString("N"), File.ReadAllBytes(path), ip, port);
         }
         public string TestSendUDPToService(string ipaddress,int port)

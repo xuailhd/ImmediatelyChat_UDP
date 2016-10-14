@@ -36,7 +36,7 @@ namespace Xugl.ImmediatelyChat.SocketEngine
 
         private int reciveWait = 5;
 
-        private int eachSendCount = 1000;
+        private int eachSendCount = 6000;
 
         private string ipaddress;
         private int port;
@@ -265,23 +265,31 @@ namespace Xugl.ImmediatelyChat.SocketEngine
                 model.UpdateTime = DateTime.Now.ToString(CommonFlag.F_DateTimeFormat);
                 if (!model.DataWithServersKeys.Contains(data[1]))
                 {
-                    model.DataWithServersKeys.Add(data[1]);
-                    model.DataWithServers.Add(data[1],data.Skip(2).ToArray());
-                    base.LogTool.Log("当前数量:" + MsgID + "  " + model.DataWithServers.Count);
-                    if (model.DataWithServers.Count == model.AllCount)
+                    try
                     {
-                        if (model.AsyncFlag.Pop())
+                        model.DataWithServers.Add(data[1], data.Skip(2).ToArray());
+                        model.DataWithServersKeys.Add(data[1]);
+                        base.LogTool.Log("当前数量:" + MsgID + "  " + model.DataWithServers.Count);
+                        if (model.DataWithServers.Count == model.AllCount)
                         {
-                            byte[] tempData = null;
-                            for (byte i = 1; i < model.AllCount; i++)
+                            if (model.AsyncFlag.Pop())
                             {
-                                tempData = tempData.Combine(model.DataWithServers[i]);
+                                byte[] tempData = null;
+                                for (byte i = 1; i < model.AllCount; i++)
+                                {
+                                    tempData = tempData.Combine(model.DataWithServers[i]);
+                                }
+                                redContactDataBufferKeys.Remove(model.MsgID);
+                                model.IsDelete = true;
+                                HandleRecivedMessage(tempData);
                             }
-                            redContactDataBufferKeys.Remove(model.MsgID);
-                            model.IsDelete = true;
-                            HandleRecivedMessage(tempData);
                         }
                     }
+                    catch(ArgumentException ex)
+                    {
+
+                    }
+                    
                 }
             }
             //else
