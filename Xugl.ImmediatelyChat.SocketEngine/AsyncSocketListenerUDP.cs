@@ -127,7 +127,7 @@ namespace Xugl.ImmediatelyChat.SocketEngine
             T token = (T)e.UserToken;
             try
             {
-                LogTool.Log("接受数据包: e.BytesTransferred：" + e.BytesTransferred.ToString() + "  e.SocketError:" + e.SocketError.ToString());
+                //LogTool.Log("接受数据包: e.BytesTransferred：" + e.BytesTransferred.ToString() + "  e.SocketError:" + e.SocketError.ToString());
                 if (e.BytesTransferred > 0 && e.SocketError == SocketError.Success)
                 {
                     string destip = ((IPEndPoint)e.RemoteEndPoint).Address.ToString();

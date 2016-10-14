@@ -70,26 +70,29 @@ namespace Xugl.ImmediatelyChat.SocketEngine
 
         public void StartMainThread(string _ipaddress, int _port)
         {
-            IsRunning = true;
+            if (!IsRunning)
+            {
+                IsRunning = true;
 
-            ipaddress = _ipaddress;
-            port = _port;
+                ipaddress = _ipaddress;
+                port = _port;
 
-            ThreadStart st = new ThreadStart(SendDataThread);
-            Thread thread = new Thread(st);
-            thread.Start();
+                ThreadStart st = new ThreadStart(SendDataThread);
+                Thread thread = new Thread(st);
+                thread.Start();
 
-            st = new ThreadStart(HandlerReadBuffer);
-            thread = new Thread(st);
-            thread.Start();
+                st = new ThreadStart(HandlerReadBuffer);
+                thread = new Thread(st);
+                thread.Start();
 
-            st = new ThreadStart(HandlerReSend);
-            thread = new Thread(st);
-            thread.Start();
+                st = new ThreadStart(HandlerReSend);
+                thread = new Thread(st);
+                thread.Start();
 
-            st = new ThreadStart(MainThread);
-            thread = new Thread(st);
-            thread.Start();
+                st = new ThreadStart(MainThread);
+                thread = new Thread(st);
+                thread.Start();
+            }
         }
 
         private void MainThread()
@@ -170,7 +173,7 @@ namespace Xugl.ImmediatelyChat.SocketEngine
 
         private byte[] HandleReadBuffer(byte[] data, string MsgID)
         {
-            base.LogTool.Log("接受组合数据包:" + MsgID + "  " + data[0].ToString() + "  " + data.Length);
+            //base.LogTool.Log("接受组合数据包:" + MsgID + "  " + data[0].ToString() + "  " + data.Length);
             if (data[0] > 0 && !string.IsNullOrEmpty(MsgID))
             {
                 if (redContactDataBufferKeys.Contains(MsgID))
@@ -269,7 +272,7 @@ namespace Xugl.ImmediatelyChat.SocketEngine
                     {
                         model.DataWithServers.Add(data[1], data.Skip(2).ToArray());
                         model.DataWithServersKeys.Add(data[1]);
-                        base.LogTool.Log("当前数量:" + MsgID + "  " + model.DataWithServers.Count);
+                        //base.LogTool.Log("当前数量:" + MsgID + "  " + model.DataWithServers.Count);
                         if (model.DataWithServers.Count == model.AllCount)
                         {
                             if (model.AsyncFlag.Pop())
@@ -422,15 +425,15 @@ namespace Xugl.ImmediatelyChat.SocketEngine
                                 }
                                 else
                                 {
-                                    base.LogTool.Log("未发送成功的数据包 item.MsgID:" + item.MsgID + " item.SendID:" + item.SendID + " item.Sort:" + item.Sort.ToString() + "item.ContactData" + item.ContactData.Length);
+                                    //base.LogTool.Log("未发送成功的数据包 item.MsgID:" + item.MsgID + " item.SendID:" + item.SendID + " item.Sort:" + item.Sort.ToString() + "item.ContactData" + item.ContactData.Length);
                                     HandleError(item.MsgID);
                                 }
                             }
                         }
-                        else
-                        {
-                            base.LogTool.Log("错误的空数据");
-                        }
+                        //else
+                        //{
+                        //    base.LogTool.Log("错误的空数据");
+                        //}
 
                         i--;
                     }
@@ -469,8 +472,8 @@ namespace Xugl.ImmediatelyChat.SocketEngine
                                 tmpstr = tmpstr + item.DataWithServersKeys[j].ToString() + ",";
                             }
 
-                            base.LogTool.Log("未接受成功的数据 item.MsgID:" + item.MsgID + " item.AllCount:" + item.AllCount + " item.DataWithServersKeys.Count:" + item.DataWithServersKeys.Count
-                                + " item.DataWithServers.Count:" + item.DataWithServers.Count + " tmpstr:" + tmpstr);
+                            //base.LogTool.Log("未接受成功的数据 item.MsgID:" + item.MsgID + " item.AllCount:" + item.AllCount + " item.DataWithServersKeys.Count:" + item.DataWithServersKeys.Count
+                            //    + " item.DataWithServers.Count:" + item.DataWithServers.Count + " tmpstr:" + tmpstr);
                             redContactDataBuffer.Remove(item);
                             redContactDataBufferKeys.Remove(item.MsgID);
                         }
