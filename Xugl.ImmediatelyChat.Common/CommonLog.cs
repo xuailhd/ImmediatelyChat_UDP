@@ -16,7 +16,7 @@ namespace Xugl.ImmediatelyChat.Common
             get
             {
 
-                return _LogMsgs.ToString(0, _LogMsgs.Length > 5000 ? 5000 : _LogMsgs.Length);
+                return _LogMsgs.ToString(0, _LogMsgs.Length > 20000 ? 20000 : _LogMsgs.Length);
             }
         }
 
@@ -46,7 +46,7 @@ namespace Xugl.ImmediatelyChat.Common
 
         public void Log(string msg)
         {
-            if (_LogMsgs.Length>5000)
+            if (_LogMsgs.Length> 20000)
             {
                 _LogMsgs.Clear();
             }

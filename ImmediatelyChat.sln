@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xugl.ImmediatelyChat.Site", "Xugl.ImmediatelyChat.Site\Xugl.ImmediatelyChat.Site.csproj", "{65F66E4B-8484-401B-8921-0F077A574774}"
 EndProject
@@ -18,8 +18,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xugl.Immediatelychat.Data.EF", "Xugl.ImmediatelyChat.Data.EF\Xugl.Immediatelychat.Data.EF.csproj", "{C6192AE3-3026-4B7B-AF6F-30D2A17288A9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xugl.ImmediatelyChat.Core", "Xugl.ImmediatelyChat.Core\Xugl.ImmediatelyChat.Core.csproj", "{F01A79CB-296C-41A2-8DBD-8DD78F1C4227}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xugl.Immediatelychat.AppService", "Xugl.ImmediatelyChat.AppService\Xugl.Immediatelychat.AppService.csproj", "{B6B9C337-243C-41EA-B58A-DC398A452DF3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xugl.ImmediatelyChat.MessageMainServer", "Xugl.ImmediatelyChat.MessageMainServer\Xugl.ImmediatelyChat.MessageMainServer.csproj", "{BD92B2B0-EF2E-4D40-9E72-5508341AB28E}"
 EndProject
@@ -63,10 +61,6 @@ Global
 		{F01A79CB-296C-41A2-8DBD-8DD78F1C4227}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F01A79CB-296C-41A2-8DBD-8DD78F1C4227}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F01A79CB-296C-41A2-8DBD-8DD78F1C4227}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B6B9C337-243C-41EA-B58A-DC398A452DF3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B6B9C337-243C-41EA-B58A-DC398A452DF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B6B9C337-243C-41EA-B58A-DC398A452DF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B6B9C337-243C-41EA-B58A-DC398A452DF3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BD92B2B0-EF2E-4D40-9E72-5508341AB28E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BD92B2B0-EF2E-4D40-9E72-5508341AB28E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BD92B2B0-EF2E-4D40-9E72-5508341AB28E}.Release|Any CPU.ActiveCfg = Release|Any CPU

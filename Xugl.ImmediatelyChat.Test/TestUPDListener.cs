@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -11,14 +12,29 @@ using Xugl.ImmediatelyChat.SocketEngine;
 
 namespace Xugl.ImmediatelyChat.Test
 {
-    public class TestUPDListener
+    public class TestUPDListener:ServerInstance
     {
         private BufferManager m_bufferManager;
-        public TestUPDListener()
+        public TestUPDListener(string ip,int port):base(1200,100,4,CommonVariables.LogTool)
+        {
+            base.StartMainThread(ip, port);
+        }
+
+        protected override byte[] HandleRecivedMessage(byte[] data)
+        {
+            CommonVariables.LogTool.Log("来数据了");
+            File.WriteAllBytes("F:\\textfolder\\" + Guid.NewGuid().ToString("N"), data);
+            return null;
+        }
+        protected override void HandleError(string msgID)
         {
 
         }
 
+        public void SendFile(string path, string ip, int port)
+        {
+            base.SendMsg(Guid.NewGuid().ToString("N"), File.ReadAllBytes(path), ip, port);
+        }
         public string TestSendUDPToService(string ipaddress,int port)
         {
             Socket socket = new Socket(SocketType.Dgram, ProtocolType.Udp);

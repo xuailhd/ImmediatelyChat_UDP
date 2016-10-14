@@ -21,11 +21,16 @@ namespace Xugl.ImmediatelyChat.SocketEngine
         const int opsToPreAlloc = 2;
         private SocketAsyncEventArgsPool<SocketAsyncEventArgs> m_readWritePool;
         private Socket mainServiceSocket;
+        //private Socket sendSocket;
         private BufferManager m_bufferManager;
 
         private Semaphore m_maxNumberReceiveClients;
         private Semaphore m_maxNumberSendClients;
-        private ICommonLog LogTool;
+        protected ICommonLog LogTool;
+
+        protected bool IsRunning = false;
+
+        IPEndPoint host;
 
         public AsyncSocketListenerUDP(int _maxSize, int _maxReciveCount,int _maxSendCount, ICommonLog _logTool)
         {
@@ -60,16 +65,18 @@ namespace Xugl.ImmediatelyChat.SocketEngine
         protected void BeginService(string ipaddress,int port)
         {
             IPAddress ip = IPAddress.Parse(ipaddress);
-            IPEndPoint ipe = new IPEndPoint(ip, port);
+            host = new IPEndPoint(ip, port);
+
+            //sendSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
             mainServiceSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            mainServiceSocket.Bind(ipe);
+            mainServiceSocket.Bind(host);
             //mainServiceSocket.Listen(m_maxConnnections);
 
             //m_bufferManager = BufferManager.CreateBufferManager(m_maxConnnections * m_maxSize * opsToPreAlloc, m_maxSize);
             m_bufferManager = BufferManager.CreateBufferManager((m_maxReciveCount + m_maxSendCount) * m_maxSize, m_maxSize);
 
-            for (int i = 0; i < m_maxReciveCount + m_maxSendCount; i++)
+            for (int i = 0; i < (m_maxReciveCount * 2 + m_maxSendCount); i++)
             {
                 SocketAsyncEventArgs socketAsyncEventArg = new SocketAsyncEventArgs();
                 socketAsyncEventArg.UserToken = new T();
@@ -78,6 +85,7 @@ namespace Xugl.ImmediatelyChat.SocketEngine
                 m_readWritePool.Push(socketAsyncEventArg);
             }
 
+            
             StartReceive();
         }
 
@@ -85,59 +93,126 @@ namespace Xugl.ImmediatelyChat.SocketEngine
         private void StartReceive()
         {
             m_maxNumberReceiveClients.WaitOne();
-            SocketAsyncEventArgs e = m_readWritePool.Pop();
-            bool willRaiseEvent = mainServiceSocket.ReceiveFromAsync(e);
-            if (!willRaiseEvent)
+            if (mainServiceSocket == null)
             {
-                ProcessReceive(e);
+                return;
             }
-            StartReceive();
+            try
+            {
+                SocketAsyncEventArgs e = m_readWritePool.Pop();
+                e.RemoteEndPoint = host;
+                e.SetBuffer(m_bufferManager.TakeBuffer(m_maxSize), 0, m_maxSize);
+                bool willRaiseEvent = mainServiceSocket.ReceiveFromAsync(e);
+                if (!willRaiseEvent)
+                {
+                    ProcessReceive(e);
+                }
+                StartReceive();
+            }
+            catch(Exception ex)
+            {
+                IsRunning = false;
+                LogTool.Log(ex.Message + ex.StackTrace);
+            }
+            
         }
 
-        protected abstract string HandleRecivedMessage(string inputMessage, T token);
+        protected abstract byte[] HandleRecivedMessage(byte[] inputMessage, T token);
 
         protected abstract void HandleError(T token);
 
         private void ProcessReceive(SocketAsyncEventArgs e)
         {
+            m_maxNumberReceiveClients.Release();
             T token = (T)e.UserToken;
             try
             {
+                LogTool.Log("接受数据包: e.BytesTransferred：" + e.BytesTransferred.ToString() + "  e.SocketError:" + e.SocketError.ToString());
                 if (e.BytesTransferred > 0 && e.SocketError == SocketError.Success)
                 {
-                    string data = Encoding.UTF8.GetString(e.Buffer, e.Offset, e.BytesTransferred);
-                    string returndata = HandleRecivedMessage(data, token);
-                    if (string.IsNullOrEmpty(returndata))
-                    {
-                        return;
-                    }
-                    int bytecount = Encoding.UTF8.GetBytes(returndata, 0, returndata.Length, e.Buffer,0);
-                    m_maxNumberReceiveClients.Release();
-                    m_maxNumberSendClients.WaitOne();
-                    token.IP = ((IPEndPoint)e.RemoteEndPoint).Address.ToString();
-                    token.Port = ((IPEndPoint)e.RemoteEndPoint).Port;
-                    e.SetBuffer(0, bytecount);
-                    bool willRaiseEvent = mainServiceSocket.SendToAsync(e);
-                    if (!willRaiseEvent)
-                    {
-                        ProcessSend(e);
-                    }
+                    string destip = ((IPEndPoint)e.RemoteEndPoint).Address.ToString();
+                    int destport = ((IPEndPoint)e.RemoteEndPoint).Port;
+                    token.IP = destip;
+                    token.Port = destport;
+                    byte[] returndata = HandleRecivedMessage(e.Buffer.Skip(e.Offset).Take(e.BytesTransferred).ToArray(),token);
+                    m_readWritePool.Push(e);
+                    //if (returndata== null || returndata.Length <= 0)
+                    //{
+                    //    ReleaseReceive(e);
+                    //    return;
+                    //}
+                    
+                    //如果有返回数据，这样可以免排队
+                    //ReleaseReceive(e);
+                    //m_maxNumberSendClients.WaitOne();
+                    //e = m_readWritePool.Pop();
+                    //token = (T)e.UserToken;
+                    //try
+                    //{
+                    //    token.IP = destip;
+                    //    token.Port = destport;
+                    //    IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(destip), destport);
+                    //    e.RemoteEndPoint = endPoint;
+                    //    e.SetBuffer(returndata, 0, returndata.Length);
+                    //    bool willRaiseEvent = mainServiceSocket.SendToAsync(e);
+                    //    if (!willRaiseEvent)
+                    //    {
+                    //        ProcessSend(e);
+                    //    }
+                    //}
+                    //catch (Exception ex)
+                    //{
+                    //    LogTool.Log(ex.Message + ex.StackTrace);
+                    //    ReleaseSend(e);
+                    //}
                 }
                 else
                 {
-                    ReleaseReceive(e);
+                    m_readWritePool.Push(e);
+                    //ReleaseReceive(e);
                 }
             }
             catch (Exception ex)
             {
+                IsRunning = false;
+                m_readWritePool.Push(e);
                 LogTool.Log(ex.Message + ex.StackTrace);
-                ReleaseReceive(e);
+                //ReleaseReceive(e);
             }
+        }
+
+        public bool SendMsg(string ipaddress, int port, byte[] sendData, string messageID)
+        {
+            if (string.IsNullOrEmpty(ipaddress) || port<=0 || port>65535)
+            {
+                return false;
+            }
+            m_maxNumberSendClients.WaitOne();
+            SocketAsyncEventArgs e = m_readWritePool.Pop();
+            try
+            {
+                IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(ipaddress), port);
+                e.RemoteEndPoint = endPoint;
+                e.SetBuffer(sendData,0, sendData.Length);
+                bool willRaiseEvent = mainServiceSocket.SendToAsync(e);
+                if (!willRaiseEvent)
+                {
+                    ProcessSend(e);
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                IsRunning = false;
+                LogTool.Log(ex.Message + ex.StackTrace);
+                ReleaseSend(e);
+            }
+            return false;
         }
 
         public bool SendMsg(string ipaddress, int port, string sendData, string messageID)
         {
-            if(string.IsNullOrEmpty(ipaddress) || port<=0 || port>65535)
+            if (string.IsNullOrEmpty(ipaddress) || port <= 0 || port > 65535)
             {
                 return false;
             }
@@ -158,6 +233,7 @@ namespace Xugl.ImmediatelyChat.SocketEngine
             }
             catch (Exception ex)
             {
+                IsRunning = false;
                 LogTool.Log(ex.Message + ex.StackTrace);
                 ReleaseSend(e);
             }
@@ -182,6 +258,7 @@ namespace Xugl.ImmediatelyChat.SocketEngine
             }
             catch (Exception ex)
             {
+                IsRunning = false;
                 LogTool.Log(ex.Message + ex.StackTrace);
                 HandleError(token);
                 ReleaseSend(e);

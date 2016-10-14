@@ -28,9 +28,9 @@ namespace Xugl.ImmediatelyChat.SocketEngine
 
                 _Pool.Push(item);
 
-            }
-
         }
+
+    }
 
         public T PopOrNew()
         {

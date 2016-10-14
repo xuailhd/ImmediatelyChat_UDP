@@ -76,14 +76,47 @@ namespace Xugl.ImmediatelyChat.SocketEngine
             }
         }
 
+        public void SendMsg(string ipaddress, int port, string sendData, string messageID)
+        {
+            m_maxNumberAcceptedClients.WaitOne();
+            AsyncClientToken asyncClientToken = m_readWritePool.PopOrNew();
+            asyncClientToken.IP = ipaddress;
+            asyncClientToken.Port = port;
+            asyncClientToken.MessageID = messageID;
+            int sendcount = Encoding.UTF8.GetBytes(sendData, 0, sendData.Length, asyncClientToken.Buffer, 0);
+            asyncClientToken.Datasize = sendcount;
+
+            try
+            {
+                IPEndPoint ipe = new IPEndPoint(IPAddress.Parse(asyncClientToken.IP), asyncClientToken.Port);
+                asyncClientToken.Socket.BeginSendTo(asyncClientToken.Buffer, 0, asyncClientToken.Datasize, SocketFlags.None, ipe, new AsyncCallback(SendCallback), asyncClientToken);
+            }
+            catch (Exception ex)
+            {
+                CloseOneInstance(asyncClientToken);
+                if (LogTool != null)
+                {
+                    LogTool.Log(ex.Message + ex.StackTrace);
+                }
+            }
+        }
+
         private void SendCallback(IAsyncResult ar)
         {
             AsyncClientToken token = (AsyncClientToken)ar.AsyncState;
             try
             {
                 token.Socket.EndSendTo(ar);
-                EndPoint ipe = new IPEndPoint(IPAddress.Parse(token.IP), token.Port);
-                token.Socket.BeginReceiveFrom(token.Buffer, 0, m_maxSize, SocketFlags.None, ref ipe, new AsyncCallback(ReciveCallback), token);
+
+                if(token.HandlerReturnData != null)
+                {
+                    EndPoint ipe = new IPEndPoint(IPAddress.Parse(token.IP), token.Port);
+                    token.Socket.BeginReceiveFrom(token.Buffer, 0, m_maxSize, SocketFlags.None, ref ipe, new AsyncCallback(ReciveCallback), token);
+                }         
+                else
+                {
+                    CloseOneInstance(token);
+                }       
             }
             catch(Exception ex)
             {

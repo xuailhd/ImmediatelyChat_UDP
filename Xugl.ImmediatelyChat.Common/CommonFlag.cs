@@ -8,6 +8,9 @@ namespace Xugl.ImmediatelyChat.Common
 {
     public class CommonFlag
     {
+        private static string f_CommonVerify = "CommonVerify";
+        public static string F_CommonVerify { get { return f_CommonVerify; } }
+
         private static string f_ArrangeChars = "ArrangeChars";
         public static string F_ArrangeChars { get { return f_ArrangeChars; } }
 

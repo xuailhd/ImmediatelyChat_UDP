@@ -27,7 +27,7 @@ namespace Xugl.ImmediatelyChat.SocketEngine
             }
         }
 
-
+        public string  MsgID { get; set;}
         public string IP { get; set; }
         public int Port { get; set; }
 

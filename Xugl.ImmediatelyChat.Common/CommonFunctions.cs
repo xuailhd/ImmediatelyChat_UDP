@@ -51,4 +51,30 @@ namespace Xugl.ImmediatelyChat.Common
             return server;
         }
     }
+
+    public static class CommonExtend
+    {
+        public static byte[] Combine(this byte[] source, byte[] news)
+        {
+            byte[] tempnew;
+            if (news == null || news.Length <= 0)
+            {
+                return source;
+            }
+
+            if (source == null || source.Length <= 0)
+            {
+                tempnew = new byte[news.Length];
+                news.CopyTo(tempnew, 0);
+                return tempnew;
+            }
+            else
+            {
+                tempnew = new byte[source.Length + news.Length];
+                source.CopyTo(tempnew, 0);
+                news.CopyTo(tempnew, source.Length);
+                return tempnew;
+            }
+        }
+    }
 }

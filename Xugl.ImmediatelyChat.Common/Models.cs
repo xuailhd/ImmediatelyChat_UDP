@@ -80,6 +80,35 @@ namespace Xugl.ImmediatelyChat.Common
         public ContactData ContactData { get; set; }
     }
 
+
+    public class DataSortModel
+    {
+        public byte AllCount { get; set; }
+        public string UpdateTime { get; set; }
+        public string MsgID { get; set; }
+        public Stack<bool> AsyncFlag { get; set; }
+        public IDictionary<byte,byte[]> DataWithServers { get; set; }
+        public List<byte> DataWithServersKeys { get; set; }
+
+        public bool IsDelete { get; set; }
+    }
+
+    public class DataWithServer
+    {
+        public string ServerIP { get; set; }
+        public int ServerPort { get; set; }
+
+        public string SendID { get; set; }
+        public string MsgID { get; set; }
+        public string SendTime { get; set; }
+        public int ReCount { get; set; }
+        public byte Sort { get; set; }
+        public byte AllCount { get; set;}
+        public byte[] ContactData { get; set; }
+
+        public bool IsDelete { get; set; }
+    }
+
     public class ContactData
     {
         public string ObjectID { get; set; }
