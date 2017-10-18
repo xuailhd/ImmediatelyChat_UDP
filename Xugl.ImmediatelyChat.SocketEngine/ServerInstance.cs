@@ -9,7 +9,7 @@ using Xugl.ImmediatelyChat.Common;
 
 namespace Xugl.ImmediatelyChat.SocketEngine
 {
-    public abstract class ServerInstance : AsyncSocketListenerUDP<AsyncUserToken>
+    public abstract class ServerInstance<T> : AsyncSocketListenerUDP<T> where T : AsyncUserToken, new()
     {
         public ServerInstance(int _maxSize, int _maxReciveCount, int _maxSendCount, ICommonLog _logTool) : base(_maxSize, _maxReciveCount, _maxSendCount, _logTool)
         {
@@ -100,9 +100,9 @@ namespace Xugl.ImmediatelyChat.SocketEngine
             base.BeginService(ipaddress, port);
         }
 
-        protected abstract byte[] HandleRecivedMessage(byte[] data);
+        protected abstract byte[] HandleRecivedMessage(byte[] data, T token);
 
-        protected override byte[] HandleRecivedMessage(byte[] data, AsyncUserToken token)
+        protected override byte[] HandleRecived(byte[] data, T token)
         {
             string SendID = Encoding.UTF8.GetString(data, 0, 32);
 
@@ -144,17 +144,16 @@ namespace Xugl.ImmediatelyChat.SocketEngine
                 byte[] returnbyte;
                 if (data[64] > 0)
                 {
-                    returnbyte = HandleReadBuffer(data.Skip(64).ToArray(), Encoding.UTF8.GetString(data, 32, 32));
+                    returnbyte = HandleReadBuffer(data.Skip(64).ToArray(), Encoding.UTF8.GetString(data, 32, 32), token);
                 }
-
-                //else
-                //{
-                //    returnbyte = HandleRecivedMessage(data.Skip(66).ToArray());
-                //}
-                //if (returnbyte == null || returnbyte.Length <= 0)
-                //{
-                //    return data.Take(32).ToArray();
-                //}
+                else
+                {
+                    returnbyte = HandleRecivedMessage(data.Skip(66).ToArray(),token);
+                }
+                if (returnbyte == null || returnbyte.Length <= 0)
+                {
+                    return data.Take(32).ToArray();
+                }
 
                 DataWithServer contactDataWithServer = new DataWithServer();
                 contactDataWithServer = new DataWithServer();
@@ -171,14 +170,14 @@ namespace Xugl.ImmediatelyChat.SocketEngine
             }
         }
 
-        private byte[] HandleReadBuffer(byte[] data, string MsgID)
+        private byte[] HandleReadBuffer(byte[] data, string MsgID, T token)
         {
             //base.LogTool.Log("接受组合数据包:" + MsgID + "  " + data[0].ToString() + "  " + data.Length);
             if (data[0] > 0 && !string.IsNullOrEmpty(MsgID))
             {
                 if (redContactDataBufferKeys.Contains(MsgID))
                 {
-                    UpdateDataSortModel(data, MsgID);
+                    UpdateDataSortModel(data, MsgID , token);
                 }
                 else
                 {
@@ -207,19 +206,19 @@ namespace Xugl.ImmediatelyChat.SocketEngine
                         }
                         else
                         {
-                            UpdateDataSortModel(data, MsgID);
+                            UpdateDataSortModel(data, MsgID, token);
                         }
                     }
                     catch(ArgumentException ex)
                     {
-                        UpdateDataSortModel(data, MsgID);
+                        UpdateDataSortModel(data, MsgID, token);
                     }
                 }
             }
             return null;
         }
 
-        private void UpdateDataSortModel(byte[] data, string MsgID)
+        private void UpdateDataSortModel(byte[] data, string MsgID,T token)
         {
             int retrycount = 0;
             int index = redContactDataBufferKeys.IndexOf(MsgID);
@@ -284,7 +283,7 @@ namespace Xugl.ImmediatelyChat.SocketEngine
                                 }
                                 redContactDataBufferKeys.Remove(model.MsgID);
                                 model.IsDelete = true;
-                                HandleRecivedMessage(tempData);
+                                HandleRecivedMessage(tempData, token);
                             }
                         }
                     }
@@ -303,12 +302,21 @@ namespace Xugl.ImmediatelyChat.SocketEngine
         }
 
 
-        protected abstract void HandleError(string msgID);
-        protected override void HandleError(AsyncUserToken token)
+        protected abstract void HandleErrorMsg(T token);
+        protected override void HandleError(T token)
         {
             if (!string.IsNullOrWhiteSpace(token.MsgID))
             {
-                HandleError(token.MsgID);
+                HandleErrorMsg(token);
+            }
+        }
+
+        protected void HandleError(string MsgID)
+        {
+            if (!string.IsNullOrWhiteSpace(MsgID))
+            {
+                T token = new T();
+                HandleErrorMsg(token);
             }
         }
 

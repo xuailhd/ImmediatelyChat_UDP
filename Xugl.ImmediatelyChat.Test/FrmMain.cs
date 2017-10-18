@@ -29,8 +29,11 @@ namespace Xugl.ImmediatelyChat.Test
 
         private void btn_StartServer_Click(object sender, EventArgs e)
         {
+            Stack<string> pop = new Stack<string>();
 
-            lister = new TestUPDListener(txt_ip.Text, Convert.ToInt32(txt_port.Text));
+            string st = pop.Pop();
+
+            //lister = new TestUPDListener(txt_ip.Text, Convert.ToInt32(txt_port.Text));
 
             //TestUPDListener testUPDListener = new TestUPDListener();
             //testUPDListener.TestSendUDPToService(txt_ip.Text.ToString(),Convert.ToInt32(txt_port.Text.ToString()));
@@ -62,7 +65,7 @@ namespace Xugl.ImmediatelyChat.Test
 
         private void button1_Click(object sender, EventArgs e)
         {
-            lister.SendFile(txtPath.Text, txt_ip.Text, Convert.ToInt32(txt_port.Text));
+            //lister.SendFile(txtPath.Text, txt_ip.Text, Convert.ToInt32(txt_port.Text));
         }
     }
 }

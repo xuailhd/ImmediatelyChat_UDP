@@ -81,7 +81,7 @@ namespace Xugl.ImmediatelyChat.SocketEngine
                 SocketAsyncEventArgs socketAsyncEventArg = new SocketAsyncEventArgs();
                 socketAsyncEventArg.UserToken = new T();
                 socketAsyncEventArg.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
-                socketAsyncEventArg.SetBuffer(m_bufferManager.TakeBuffer(m_maxSize), 0, m_maxSize);
+                //socketAsyncEventArg.SetBuffer(m_bufferManager.TakeBuffer(m_maxSize), 0, m_maxSize);
                 m_readWritePool.Push(socketAsyncEventArg);
             }
 
@@ -100,6 +100,12 @@ namespace Xugl.ImmediatelyChat.SocketEngine
             try
             {
                 SocketAsyncEventArgs e = m_readWritePool.Pop();
+                if (e == null || e.UserToken == null)
+                {
+                    e = new SocketAsyncEventArgs();
+                    e.UserToken = new T();
+                    e.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
+                }
                 e.RemoteEndPoint = host;
                 e.SetBuffer(m_bufferManager.TakeBuffer(m_maxSize), 0, m_maxSize);
                 bool willRaiseEvent = mainServiceSocket.ReceiveFromAsync(e);
@@ -117,7 +123,7 @@ namespace Xugl.ImmediatelyChat.SocketEngine
             
         }
 
-        protected abstract byte[] HandleRecivedMessage(byte[] inputMessage, T token);
+        protected abstract byte[] HandleRecived(byte[] inputMessage, T token);
 
         protected abstract void HandleError(T token);
 
@@ -134,7 +140,7 @@ namespace Xugl.ImmediatelyChat.SocketEngine
                     int destport = ((IPEndPoint)e.RemoteEndPoint).Port;
                     token.IP = destip;
                     token.Port = destport;
-                    byte[] returndata = HandleRecivedMessage(e.Buffer.Skip(e.Offset).Take(e.BytesTransferred).ToArray(),token);
+                    byte[] returndata = HandleRecived(e.Buffer.Skip(e.Offset).Take(e.BytesTransferred).ToArray(),token);
                     m_readWritePool.Push(e);
                     //if (returndata== null || returndata.Length <= 0)
                     //{

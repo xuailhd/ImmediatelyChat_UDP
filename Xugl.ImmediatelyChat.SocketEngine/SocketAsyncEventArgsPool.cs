@@ -48,9 +48,14 @@ namespace Xugl.ImmediatelyChat.SocketEngine
 
             lock (_Pool)
             {
-
-                return _Pool.Pop();
-
+                try
+                {
+                    return _Pool.Pop();
+                }
+                catch(Exception ex)
+                {
+                    return default(T);
+                }
             }
 
         }

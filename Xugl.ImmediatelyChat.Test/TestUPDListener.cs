@@ -12,7 +12,17 @@ using Xugl.ImmediatelyChat.SocketEngine;
 
 namespace Xugl.ImmediatelyChat.Test
 {
-    public class TestUPDListener:ServerInstance
+
+    public class MCSListenerUDPToken : AsyncUserToken
+    {
+
+        public MCSListenerUDPToken()
+        {
+        }
+
+
+    }
+    public class TestUPDListener:ServerInstance<MCSListenerUDPToken>
     {
         private BufferManager m_bufferManager;
         public TestUPDListener(string ip,int port):base(6200,100,4,CommonVariables.LogTool)
@@ -20,14 +30,14 @@ namespace Xugl.ImmediatelyChat.Test
             base.StartMainThread(ip, port);
         }
 
-        protected override byte[] HandleRecivedMessage(byte[] data)
+        protected override byte[] HandleRecivedMessage(byte[] data, MCSListenerUDPToken token)
         {
             CommonVariables.LogTool.Log("来数据了");
             File.WriteAllText("F:\\textfolder\\" + Guid.NewGuid().ToString("N"), DateTime.Now.ToString(CommonFlag.F_DateTimeFormat));
             File.WriteAllBytes("F:\\textfolder\\" + Guid.NewGuid().ToString("N"), data);
             return null;
         }
-        protected override void HandleError(string msgID)
+        protected override void HandleErrorMsg(MCSListenerUDPToken token)
         {
 
         }

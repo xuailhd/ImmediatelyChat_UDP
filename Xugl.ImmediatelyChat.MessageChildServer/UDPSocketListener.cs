@@ -46,14 +46,14 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
         }
     }
 
-    public class UDPSocketListener : AsyncSocketListenerUDP<MCSListenerUDPToken>
+    public class UDPSocketListener : ServerInstance<MCSListenerUDPToken>
     {
         public UDPSocketListener()
             : base(1024, 100, 20, CommonVariables.LogTool)
         {
         }
 
-        protected override void HandleError(MCSListenerUDPToken token)
+        protected override void HandleErrorMsg(MCSListenerUDPToken token)
         {
             if (token.Model!= null)
             {
@@ -62,46 +62,47 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
             return;
         }
 
-        protected override string HandleRecivedMessage(string inputMessage, MCSListenerUDPToken token)
+        protected override byte[] HandleRecivedMessage(byte[] data, MCSListenerUDPToken token)
         {
-            if (string.IsNullOrEmpty(inputMessage) || token == null)
+            if (data == null || data.Length <= 0)
             {
-                return string.Empty;
+                return null;
             }
 
             try
             {
-                string data = inputMessage;
+                byte targetCount = data[0];
+                string targetstr = Encoding.UTF8.GetString(data.Skip(1).Take(targetCount).ToArray());
 
-                if (data.StartsWith(CommonFlag.F_PSCallMCSStart))
+                if (targetstr == CommonFlag.F_PSCallMCSStart)
                 {
-                    return HandlePSCallMCSStart(data, token);
+                    HandlePSCallMCSStart(Encoding.UTF8.GetString(data.Skip(targetCount + 1).ToArray()), token);
                 }
 
                 if (CommonVariables.IsBeginMessageService)
                 {
                     //handle UA feedback
-                    if (data.StartsWith(CommonFlag.F_MCSReceiveUAFBMSG))
+                    if (targetstr == CommonFlag.F_MCSReceiveUAFBMSG)
                     {
                         return HandleMCSReceiveUAFBMSG(data, token);
                     }
 
-                    if (data.StartsWith(CommonFlag.F_MCSVerifyUA))
+                    if (targetstr == CommonFlag.F_MCSVerifyUA)
                     {
                         return HandleMCSVerifyUA(data, token);
                     }
 
-                    if (data.StartsWith(CommonFlag.F_MCSReceiveMMSUAUpdateTime))
+                    if (targetstr == CommonFlag.F_MCSReceiveMMSUAUpdateTime)
                     {
                         return HandleMCSReceiveMMSUAUpdateTime(data, token);
                     }
 
-                    if (data.StartsWith(CommonFlag.F_MCSVerifyUAInfo))
+                    if (targetstr == CommonFlag.F_MCSVerifyUAInfo)
                     {
                         return HandleMCSReceiveUAInfo(data, token);
                     }
 
-                    if (data.StartsWith(CommonFlag.F_MCSVerifyUAMSG))
+                    if (targetstr == CommonFlag.F_MCSVerifyUAMSG)
                     {
                         return HandleMCSVerifyUAMSG(data, token);
                     }
@@ -131,7 +132,7 @@ namespace Xugl.ImmediatelyChat.MessageChildServer
             {
                 CommonVariables.LogTool.Log(ex.Message + ex.StackTrace);
             }
-            return string.Empty;
+            return null;
         }
 
         private string HandleMCSVerifySendUAMsgFB(string data, MCSListenerUDPToken token)
